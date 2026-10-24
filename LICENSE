@@ -1,120 +1,133 @@
-GLOBAL RESTRICTED SOURCE LICENSE (GRSL) 1.0
+# PolyForm Noncommercial License 1.0.0
 
-Copyright (c) 2026 xMqR. All rights reserved, except for the limited permissions expressly granted below.
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
 
-1. DEFINITIONS
+## Acceptance
 
-"Software" refers to the source code, scripts, configuration files, documentation, and other materials distributed by the Copyright Holder under this License, except where a file or component expressly identifies different licensing terms.
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
 
-"Copyright Holder" refers to xMqR or any other party that subsequently obtains the applicable copyright and licensing rights.
+## Copyright License
 
-"User" refers to any individual or entity accessing or using the Software.
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
 
-"Redistribution" means distributing, publishing, transmitting, sublicensing, sharing, mirroring, or otherwise making the Software, or any portion of it, available to another person or entity outside the official distribution channels authorized by the Copyright Holder.
+## Distribution License
 
-"Commercial Use" means any use primarily intended for commercial advantage, business benefit, or monetary compensation, whether direct or indirect. This includes using the Software to provide paid services, support a commercial product, or generate revenue.
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
 
-"Modification" means any alteration, adaptation, translation, extension, or derivative work based on the Software.
+## Notices
 
-2. GRANT OF PERMISSION
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
 
-Subject to compliance with this License, the Copyright Holder grants the User a limited, revocable, non-exclusive, non-transferable, non-sublicensable permission to:
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
 
-1. Access and view the Software through its official distribution channels.
-2. Download and retain copies of the Software for personal, private, non-commercial purposes.
-3. Study the Software and its source code.
-4. Modify the Software for personal, private, non-commercial use.
-5. Submit suggestions, bug reports, patches, and proposed modifications through authorized contribution channels, such as Issues and Pull Requests.
+## Changes and New Works License
 
-No other rights are granted, whether expressly, implicitly, or by estoppel.
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
 
-3. RESTRICTIONS
+## Patent License
 
-The User is expressly prohibited from:
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
 
-1. Redistributing the Software, publishing, sharing, mirroring, re-uploading, or otherwise distributing the original Software or any portion of it without prior written authorization from the Copyright Holder.
-2. Redistributing Modified Versions, publishing, sharing, distributing, or otherwise making any Modification or derivative work available to third parties without prior written authorization from the Copyright Holder.
-3. Using the Software or any Modification for Commercial Use without prior written authorization from the Copyright Holder.
-4. Publishing or maintaining public forks of the Software, including Modified Versions, on public source-code hosting platforms, provided that the original copyright notices and this License are preserved. Such forks must comply with all other applicable terms of this License, including the restrictions on Commercial Use. Public mirrors and standalone copies outside the official repositories remain prohibited without prior written authorization from the Copyright Holder.
-5. Granting, selling, transferring, or sublicensing any rights to the Software beyond those expressly granted by this License.
-6. Removing, altering, or concealing copyright notices, attribution notices, or copies of this License accompanying the Software.
+## Noncommercial Purposes
 
-These restrictions apply to the extent permitted by applicable law.
+Any noncommercial purpose is a permitted purpose.
 
-4. PRIVATE MODIFICATIONS
+## Personal Uses
 
-Users may create and maintain private Modifications for personal, non-commercial purposes, provided that:
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
 
-1. The Modifications are not redistributed or made available to third parties.
-2. The Modifications are not used for Commercial Use.
-3. All other applicable terms of this License are respected.
+## Noncommercial Organizations
 
-Users are not required to publish, disclose, or submit their private Modifications to the Copyright Holder.
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
 
-5. CONTRIBUTIONS
+## Fair Use
 
-Users may propose changes to the Software through the official contribution channels designated by the Copyright Holder.
+You may have "fair use" rights for the software under the
+law. These terms do not limit them.
 
-Submitting a contribution does not automatically transfer ownership of that contribution to the Copyright Holder.
+## No Other Rights
 
-By submitting a contribution, the contributor grants the Copyright Holder a perpetual, worldwide, non-exclusive, royalty-free license to use, reproduce, modify, incorporate, publish, and distribute that contribution as part of the Software, subject to applicable law.
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
 
-The contributor represents that they have the necessary rights to submit the contribution and grant the permissions described in this section.
+## Patent Defense
 
-Unless otherwise agreed in writing, accepted contributions remain subject to this License when distributed as part of the Software.
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
 
-6. OWNERSHIP AND INTELLECTUAL PROPERTY
+## Violations
 
-The Software remains the property of its respective copyright owners.
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
 
-This License does not transfer ownership of the Software, its trademarks, branding, or other intellectual property rights to the User.
+## No Liability
 
-All rights not expressly granted under this License are reserved by the applicable copyright holders.
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
 
-7. TERMINATION
+## Definitions
 
-The permissions granted under this License terminate automatically if the User materially violates its terms.
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
 
-Upon termination, the User must cease all activities that are no longer authorized, including prohibited Commercial Use and Redistribution, subject to any rights that cannot lawfully be terminated.
+**You** refers to the individual or entity agreeing to these
+terms.
 
-The Copyright Holder may reinstate permissions through express written authorization.
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
 
-8. DISCLAIMER OF WARRANTY
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+**Use** means anything you do with the software requiring one
+of your licenses.
 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR ITS USE, TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW.
-
-9. LIMITATION OF LIABILITY
-
-To the maximum extent permitted by applicable law, the Copyright Holder shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages arising from the use of, inability to use, or distribution of the Software in violation of this License.
-
-Nothing in this License excludes or limits liability where such exclusion or limitation is prohibited by applicable law.
-
-10. EXCEPTIONS AND WRITTEN AUTHORIZATION
-
-The Copyright Holder may grant individual or general exceptions to any provision of this License through express written authorization.
-
-Any authorization may specify its scope, duration, conditions, and permitted activities.
-
-No permission shall be inferred solely from the availability of the Software in a public repository.
-
-11. GOVERNING LAW
-
-This License shall be interpreted in accordance with applicable law. Any mandatory legal protections or requirements that cannot lawfully be waived shall remain in effect.
-
-If any provision of this License is held unenforceable, the remaining provisions shall remain effective to the extent permitted by law.
-
-12. ENTIRE AGREEMENT
-
-This License constitutes the terms governing the use of the Software, except where a separate written agreement or an expressly identified alternative license applies.
-
-By accessing or using the Software, the User acknowledges these terms to the extent such acknowledgment is legally effective.
-
-PROJECT: Global
-LICENSE: Global Restricted Source License (GRSL) 1.0
-COPYRIGHT HOLDER: xMqR
-COPYRIGHT YEAR: 2026
-DATE: October 24, 2026
-
-All rights reserved.
+Required Notice: Copyright (c) 2026 xMqR
