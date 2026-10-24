@@ -1,22 +1,22 @@
-# Global Restricted Source License (GRSL) 1.0
+GLOBAL RESTRICTED SOURCE LICENSE (GRSL) 1.0
 
-**Copyright (c) 2026 xMqR. All rights reserved, except for the limited permissions expressly granted below.**
+Copyright (c) 2026 xMqR. All rights reserved, except for the limited permissions expressly granted below.
 
-## 1. Definitions
+1. DEFINITIONS
 
-**"Software"** refers to the source code, scripts, configuration files, documentation, and other materials distributed by the Copyright Holder under this License, except where a file or component expressly identifies different licensing terms.
+"Software" refers to the source code, scripts, configuration files, documentation, and other materials distributed by the Copyright Holder under this License, except where a file or component expressly identifies different licensing terms.
 
-**"Copyright Holder"** refers to xMqR or any other party that subsequently obtains the applicable copyright and licensing rights.
+"Copyright Holder" refers to xMqR or any other party that subsequently obtains the applicable copyright and licensing rights.
 
-**"User"** refers to any individual or entity accessing or using the Software.
+"User" refers to any individual or entity accessing or using the Software.
 
-**"Redistribution"** means distributing, publishing, transmitting, sublicensing, sharing, mirroring, or otherwise making the Software, or any portion of it, available to another person or entity outside the official distribution channels authorized by the Copyright Holder.
+"Redistribution" means distributing, publishing, transmitting, sublicensing, sharing, mirroring, or otherwise making the Software, or any portion of it, available to another person or entity outside the official distribution channels authorized by the Copyright Holder.
 
-**"Commercial Use"** means any use primarily intended for commercial advantage, business benefit, or monetary compensation, whether direct or indirect. This includes using the Software to provide paid services, support a commercial product, or generate revenue.
+"Commercial Use" means any use primarily intended for commercial advantage, business benefit, or monetary compensation, whether direct or indirect. This includes using the Software to provide paid services, support a commercial product, or generate revenue.
 
-**"Modification"** means any alteration, adaptation, translation, extension, or derivative work based on the Software.
+"Modification" means any alteration, adaptation, translation, extension, or derivative work based on the Software.
 
-## 2. Grant of Permission
+2. GRANT OF PERMISSION
 
 Subject to compliance with this License, the Copyright Holder grants the User a limited, revocable, non-exclusive, non-transferable, non-sublicensable permission to:
 
@@ -28,20 +28,20 @@ Subject to compliance with this License, the Copyright Holder grants the User a 
 
 No other rights are granted, whether expressly, implicitly, or by estoppel.
 
-## 3. Restrictions
+3. RESTRICTIONS
 
 The User is expressly prohibited from:
 
-1. **Redistributing the Software:** Publishing, sharing, mirroring, re-uploading, or otherwise distributing the original Software or any portion of it without prior written authorization from the Copyright Holder.
-2. **Redistributing Modified Versions:** Publishing, sharing, distributing, or otherwise making any Modification or derivative work available to third parties without prior written authorization from the Copyright Holder.
-3. **Commercial Use:** Using the Software or any Modification for Commercial Use without prior written authorization from the Copyright Holder.
-4. **Unauthorized Forks:** Publishing or maintaining public forks, mirrors, or copies of the Software outside the official repositories without prior written authorization from the Copyright Holder.
-5. **Sublicensing:** Granting, selling, transferring, or sublicensing any rights to the Software beyond those expressly granted by this License.
-6. **License Removal:** Removing, altering, or concealing copyright notices, attribution notices, or copies of this License accompanying the Software.
+1. Redistributing the Software, publishing, sharing, mirroring, re-uploading, or otherwise distributing the original Software or any portion of it without prior written authorization from the Copyright Holder.
+2. Redistributing Modified Versions, publishing, sharing, distributing, or otherwise making any Modification or derivative work available to third parties without prior written authorization from the Copyright Holder.
+3. Using the Software or any Modification for Commercial Use without prior written authorization from the Copyright Holder.
+4. Publishing or maintaining public forks, mirrors, or copies of the Software outside the official repositories without prior written authorization from the Copyright Holder.
+5. Granting, selling, transferring, or sublicensing any rights to the Software beyond those expressly granted by this License.
+6. Removing, altering, or concealing copyright notices, attribution notices, or copies of this License accompanying the Software.
 
 These restrictions apply to the extent permitted by applicable law.
 
-## 4. Private Modifications
+4. PRIVATE MODIFICATIONS
 
 Users may create and maintain private Modifications for personal, non-commercial purposes, provided that:
 
@@ -51,7 +51,7 @@ Users may create and maintain private Modifications for personal, non-commercial
 
 Users are not required to publish, disclose, or submit their private Modifications to the Copyright Holder.
 
-## 5. Contributions
+5. CONTRIBUTIONS
 
 Users may propose changes to the Software through the official contribution channels designated by the Copyright Holder.
 
@@ -63,7 +63,7 @@ The contributor represents that they have the necessary rights to submit the con
 
 Unless otherwise agreed in writing, accepted contributions remain subject to this License when distributed as part of the Software.
 
-## 6. Ownership and Intellectual Property
+6. OWNERSHIP AND INTELLECTUAL PROPERTY
 
 The Software remains the property of its respective copyright owners.
 
@@ -71,7 +71,7 @@ This License does not transfer ownership of the Software, its trademarks, brandi
 
 All rights not expressly granted under this License are reserved by the applicable copyright holders.
 
-## 7. Termination
+7. TERMINATION
 
 The permissions granted under this License terminate automatically if the User materially violates its terms.
 
@@ -79,19 +79,19 @@ Upon termination, the User must cease all activities that are no longer authoriz
 
 The Copyright Holder may reinstate permissions through express written authorization.
 
-## 8. Disclaimer of Warranty
+8. DISCLAIMER OF WARRANTY
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
 
 IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR ITS USE, TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW.
 
-## 9. Limitation of Liability
+9. LIMITATION OF LIABILITY
 
 To the maximum extent permitted by applicable law, the Copyright Holder shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages arising from the use of, inability to use, or distribution of the Software in violation of this License.
 
 Nothing in this License excludes or limits liability where such exclusion or limitation is prohibited by applicable law.
 
-## 10. Exceptions and Written Authorization
+10. EXCEPTIONS AND WRITTEN AUTHORIZATION
 
 The Copyright Holder may grant individual or general exceptions to any provision of this License through express written authorization.
 
@@ -99,24 +99,22 @@ Any authorization may specify its scope, duration, conditions, and permitted act
 
 No permission shall be inferred solely from the availability of the Software in a public repository.
 
-## 11. Governing Law
+11. GOVERNING LAW
 
 This License shall be interpreted in accordance with applicable law. Any mandatory legal protections or requirements that cannot lawfully be waived shall remain in effect.
 
 If any provision of this License is held unenforceable, the remaining provisions shall remain effective to the extent permitted by law.
 
-## 12. Entire Agreement
+12. ENTIRE AGREEMENT
 
 This License constitutes the terms governing the use of the Software, except where a separate written agreement or an expressly identified alternative license applies.
 
 By accessing or using the Software, the User acknowledges these terms to the extent such acknowledgment is legally effective.
 
----
-
-**Project:** Global  
-**License:** Global Restricted Source License (GRSL) 1.0  
-**Copyright Holder:** xMqR  
-**Copyright Year:** 2026  
-**Date:** October 24, 2026
+PROJECT: Global
+LICENSE: Global Restricted Source License (GRSL) 1.0
+COPYRIGHT HOLDER: xMqR
+COPYRIGHT YEAR: 2026
+DATE: October 24, 2026
 
 All rights reserved.
