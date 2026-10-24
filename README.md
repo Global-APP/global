@@ -1,4 +1,10 @@
-# Global
+<div align="center">
+
+<img src=".github/assets/global-icon.png" alt="Global" width="120" height="120">
+
+<h1>Global</h1>
+
+</div>
 
 Um chat global entre comunidades do [Fluxer](https://fluxer.app). Cada servidor escolhe um canal, e as mensagens dele são retransmitidas para os canais globais dos outros servidores, com edição, exclusão e replies sincronizados.
 
