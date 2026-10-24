@@ -1,11 +1,11 @@
 const { RETENCAO_MENSAGENS_MS } = require('../config');
-const { sql } = require('../lib/database');
+const MensagemGlobal = require('../models/MensagemGlobal');
 const { log } = require('../util/logger');
 
-function limparMensagensAntigas() {
+async function limparMensagensAntigas() {
   try {
-    const r = sql.limparMensagensAntigas.run(Date.now() - RETENCAO_MENSAGENS_MS);
-    if (r.changes > 0) log.info('DB', `Limpeza: ${r.changes} vínculo(s) de mensagem antigo(s) removido(s).`);
+    const r = await MensagemGlobal.deleteMany({ criadoEm: { $lt: Date.now() - RETENCAO_MENSAGENS_MS } });
+    if (r.deletedCount > 0) log.info('DB', `Limpeza: ${r.deletedCount} vínculo(s) de mensagem antigo(s) removido(s).`);
   } catch (e) {
     log.error('DB', 'Erro ao limpar mensagens antigas', e);
   }

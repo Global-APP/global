@@ -1,5 +1,5 @@
 const { configDaGuild } = require('../../services/filtros/moderacao');
-const { sql } = require('../../lib/database');
+const ConfigGuild = require('../../models/ConfigGuild');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { temPermissaoConfig } = require('../../services/permissoes');
@@ -24,12 +24,12 @@ module.exports = {
 
     // Sem argumentos válidos só mostra o estado, então não exige permissão.
     if (!alvo || ligar === null) {
-      const cfg = configDaGuild(gId);
+      const cfg = await configDaGuild(gId);
       const st = (v) => (v ? '**filtrando**' : '**liberado**');
       await message.channel.send(
         '<:information2fill:1562606683371339784> **Filtros deste servidor**\n' +
-        `• Palavrões: ${st(cfg.filtrar_palavroes)}\n` +
-        `• Links: ${st(cfg.filtrar_links)}\n\n` +
+        `• Palavrões: ${st(cfg.filtrarPalavroes)}\n` +
+        `• Links: ${st(cfg.filtrarLinks)}\n\n` +
         'Uso: `g.automod palavroes on|off` ou `g.automod links on|off`\n' +
         '-# Padrão: liberados. Com o filtro ativo, este servidor não recebe mensagens com palavrões/links e as mensagens enviadas daqui com isso são apagadas.'
       );
@@ -41,9 +41,11 @@ module.exports = {
       return;
     }
 
-    const valor = ligar ? 1 : 0;
-    if (alvo === 'palavroes') sql.setFiltroPalavroes.run(gId, valor);
-    else sql.setFiltroLinks.run(gId, valor);
+    if (alvo === 'palavroes') {
+      await ConfigGuild.findOneAndUpdate({ guildId: gId }, { filtrarPalavroes: ligar }, { upsert: true, setDefaultsOnInsert: true });
+    } else {
+      await ConfigGuild.findOneAndUpdate({ guildId: gId }, { filtrarLinks: ligar }, { upsert: true, setDefaultsOnInsert: true });
+    }
 
     log.ok('AUTOMOD', `${alvo} ${ligar ? 'filtrado' : 'liberado'} | ${descreverContexto(message)}`);
     const nome = alvo === 'palavroes' ? 'Palavrões' : 'Links';

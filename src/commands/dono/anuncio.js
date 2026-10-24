@@ -28,7 +28,7 @@ module.exports = {
     const tokens = tokenizarAnuncio(bruto);
 
     if (tokens.length === 1 && ['parar', 'off', 'desativar'].includes(tokens[0].toLowerCase())) {
-      desativarAnuncio();
+      await desativarAnuncio();
       log.ok('ANUNCIO', 'Anúncio automático desativado');
       await message.channel.send('<:checkboxcirclefill:1562606683371339777> Anúncio automático desativado.');
       return;
@@ -89,7 +89,7 @@ module.exports = {
       return;
     }
 
-    agendarAnuncio(anuncio, intervalo);
+    await agendarAnuncio(anuncio, intervalo);
     log.ok('ANUNCIO', `Anúncio automático salvo (a cada ${intervalo} mensagens)`);
     await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Anúncio salvo! Ele será enviado **a cada ${intervalo} mensagens** do chat global.\n-# Use g.anuncio parar para desativar.`);
   }

@@ -9,11 +9,10 @@
   },
   "dependencies": {
     "@fluxerjs/core": "latest",
-    "better-sqlite3": "^13.0.3"
+    "mongoose": "^9.11.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.5",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",

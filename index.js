@@ -1,24 +1,34 @@
 const { client } = require('./src/lib/client');
-const { db } = require('./src/lib/database');
+const { conectarBanco, desconectarBanco } = require('./src/lib/database');
+const { executarMigracoes } = require('./migrations');
 const { registrarEventos } = require('./src/events');
 const { carregarComandos } = require('./src/handlers/commandHandler');
 const { recarregarPalavras } = require('./src/services/filtros/palavras');
 const { iniciarLimpezaMensagens } = require('./src/services/limpeza');
+const { iniciarAnuncio } = require('./src/services/anuncio');
 const { log } = require('./src/util/logger');
-const { migrarJsonAntigo } = require('./src/services/migracao');
 
-migrarJsonAntigo();
-iniciarLimpezaMensagens();
-recarregarPalavras();
-carregarComandos();
-registrarEventos();
+async function main(token) {
+  await conectarBanco();
+  await executarMigracoes();
+  await iniciarAnuncio();
+  await recarregarPalavras();
+
+  iniciarLimpezaMensagens();
+  carregarComandos();
+  registrarEventos();
+
+  await client.login(token);
+}
 
 process.on('unhandledRejection', (e) => log.error('PROCESSO', 'Promise rejeitada sem tratamento', e));
 process.on('uncaughtException', (e) => log.error('PROCESSO', 'Exceção não capturada', e));
 
-function encerrar(sinal) {
+async function encerrar(sinal) {
   log.info('BOT', `Recebido ${sinal}, encerrando...`);
-  try { db.close(); } catch (_) {
+  try {
+    await desconectarBanco();
+  } catch (_) {
     // Já estamos saindo.
   }
   process.exit(0);
@@ -33,4 +43,7 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-client.login(TOKEN);
+main(TOKEN).catch((e) => {
+  log.error('BOT', 'Falha ao iniciar o bot', e);
+  process.exit(1);
+});

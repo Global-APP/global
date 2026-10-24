@@ -1,4 +1,4 @@
-const { sql } = require('../../lib/database');
+const Bloqueio = require('../../models/Bloqueio');
 const { negarSeNaoStaff } = require('./_comum');
 
 module.exports = {
@@ -9,7 +9,7 @@ module.exports = {
   async execute(message) {
     if (await negarSeNaoStaff(message)) return;
 
-    const lista = sql.listarBloqueios.all();
+    const lista = await Bloqueio.find().sort({ criadoEm: -1 }).lean();
     if (lista.length === 0) {
       await message.channel.send('<:information2fill:1562606683371339784> Nenhum usuário ou servidor bloqueado.');
       return;

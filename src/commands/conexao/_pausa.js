@@ -1,4 +1,4 @@
-const { sql } = require('../../lib/database');
+const Canal = require('../../models/Canal');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { temPermissaoConfig } = require('../../services/permissoes');
@@ -12,8 +12,8 @@ async function alternarPausa(message, pausar) {
     return;
   }
 
-  const r = sql.setPausado.run(pausar ? 1 : 0, String(guildId));
-  if (r.changes === 0) {
+  const r = await Canal.updateOne({ guildId: String(guildId) }, { pausado: pausar });
+  if (r.matchedCount === 0) {
     await message.channel.send('<:information2fill:1562606683371339784> Este servidor não está conectado ao chat global. Use `g.config` primeiro.');
     return;
   }

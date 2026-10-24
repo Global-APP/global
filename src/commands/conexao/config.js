@@ -1,5 +1,5 @@
 const { DONO_ID } = require('../../config');
-const { sql } = require('../../lib/database');
+const Canal = require('../../models/Canal');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -23,10 +23,11 @@ module.exports = {
       }
     }
 
-    const anterior = sql.canalDoServidor.get(String(guildId));
-    sql.upsertCanal.run(String(guildId), String(message.channel.id));
-    limparFalhasDestino(guildId);
-    log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canal_id} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
+    const gId = String(guildId);
+    const anterior = await Canal.findOne({ guildId: gId }).lean();
+    await Canal.findOneAndUpdate({ guildId: gId }, { canalId: String(message.channel.id) }, { upsert: true });
+    limparFalhasDestino(gId);
+    log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canalId} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
 
     await message.channel.send(
       `<:checkboxcirclefill:1562606683371339777> O canal <#${message.channel.id}> foi definido com sucesso como a \`Conexão Global\`.\n` +

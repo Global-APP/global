@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
 const { CANAL_REPORTS, COOLDOWN_REPORT } = require('../../config');
-const { sql } = require('../../lib/database');
+const MensagemGlobal = require('../../models/MensagemGlobal');
 const { log } = require('../../util/logger');
 
 const cooldownReports = new Map();
@@ -29,13 +29,13 @@ module.exports = {
       return;
     }
 
-    const r = sql.grupoPorMensagem.get(String(refId));
-    const origem = r ? sql.origemDoGrupo.get(r.grupo_id, r.grupo_id) : null;
+    const r = await MensagemGlobal.findOne({ msgId: String(refId) }).lean();
+    const origem = r ? await MensagemGlobal.findOne({ grupoId: r.grupoId, msgId: r.grupoId }).lean() : null;
     if (!r || !origem) {
       await message.channel.send('<:closecirclefill:1562606683371339786> Só consigo denunciar mensagens recentes do chat global.');
       return;
     }
-    if (origem.autor_id === String(message.author.id)) {
+    if (origem.autorId === String(message.author.id)) {
       await message.channel.send('<:closecirclefill:1562606683371339786> Você não pode denunciar a si mesmo.');
       return;
     }
@@ -46,8 +46,8 @@ module.exports = {
     let conteudo = null;
     let midia = null;
     try {
-      const canalOrigem = await client.channels.fetch(origem.canal_id);
-      const original = await canalOrigem.messages.fetch(r.grupo_id);
+      const canalOrigem = await client.channels.fetch(origem.canalId);
+      const original = await canalOrigem.messages.fetch(r.grupoId);
       conteudo = original.content || '';
       if (original.attachments && original.attachments.size > 0) midia = original.attachments.first().url;
     } catch (e) {
@@ -59,7 +59,7 @@ module.exports = {
       }
     }
 
-    const guildReportada = client.guilds.get(origem.guild_id);
+    const guildReportada = client.guilds.get(origem.guildId);
     const guildDenunciante = message.guild;
     const nomeReportada = guildReportada && guildReportada.name ? guildReportada.name : 'Desconhecido';
     const nomeDenunciante = guildDenunciante && guildDenunciante.name ? guildDenunciante.name : 'Desconhecido';
@@ -76,17 +76,17 @@ module.exports = {
         .setTitle('<:information2fill:1562606683371339784> Nova denúncia')
         .setColor(0xE5484D)
         .addFields(
-          { name: 'Denunciado', value: `<@${origem.autor_id}> (\`${origem.autor_id}\`)`, inline: true },
-          { name: 'Servidor de origem', value: `${nomeReportada} (\`${origem.guild_id}\`)`, inline: true },
+          { name: 'Denunciado', value: `<@${origem.autorId}> (\`${origem.autorId}\`)`, inline: true },
+          { name: 'Servidor de origem', value: `${nomeReportada} (\`${origem.guildId}\`)`, inline: true },
           { name: 'Denunciante', value: `<@${message.author.id}> (\`${message.author.id}\`) em ${nomeDenunciante}`, inline: false },
           { name: 'Motivo', value: motivo, inline: false },
           { name: 'Mensagem', value: trecho, inline: false }
         )
-        .setFooter({ text: `g.ban usuario ${origem.autor_id}  •  msg ${r.grupo_id}` });
+        .setFooter({ text: `g.ban usuario ${origem.autorId}  •  msg ${r.grupoId}` });
 
       await canal.send({ embeds: [embed] });
       cooldownReports.set(message.author.id, Date.now());
-      log.ok('REPORT', `Denúncia de ${message.author.id} contra ${origem.autor_id} (msg ${r.grupo_id})`);
+      log.ok('REPORT', `Denúncia de ${message.author.id} contra ${origem.autorId} (msg ${r.grupoId})`);
       await message.channel.send('<:checkboxcirclefill:1562606683371339777> Denúncia enviada para a equipe do Global. Obrigado!');
     } catch (e) {
       log.error('REPORT', 'Falha ao enviar denúncia', e);
