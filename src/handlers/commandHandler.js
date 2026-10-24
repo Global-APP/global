@@ -5,13 +5,9 @@ const { log, descreverContexto } = require('../util/logger');
 
 const PASTA_COMANDOS = path.join(__dirname, '..', 'commands');
 
-// nome -> comando (um por comando)
 const comandos = new Map();
-// nome ou alias -> comando (usado para despachar)
 const rotas = new Map();
 
-// Varre a pasta recursivamente. Arquivos e pastas começando com "_" ou "." são ignorados
-// (use "_" para helpers compartilhados entre comandos, ex.: staff/_comum.js).
 function listarArquivos(pasta) {
   const arquivos = [];
   for (const entrada of fs.readdirSync(pasta, { withFileTypes: true })) {
@@ -80,7 +76,6 @@ function logComando(message, nome) {
   log.info('CMD', `${PREFIXO}${nome} | ${descreverContexto(message)} | canal ${message.channel ? message.channel.id : '?'}`);
 }
 
-// Retorna true se a mensagem era um comando conhecido (e já foi tratada).
 async function tratarComando(message, conteudo) {
   if (!conteudo.startsWith(PREFIXO)) return false;
 

@@ -47,7 +47,6 @@ async function infoMensagem(message) {
   return { guildId, nomeServidor, authorText, corEmbed, urlMidia };
 }
 
-// Pode lançar; quem chama cai para texto simples.
 function montarEmbedGlobal(message, info) {
   const autor = message.author;
   const avatarUrl = autor.displayAvatarURL ? autor.displayAvatarURL() : null;

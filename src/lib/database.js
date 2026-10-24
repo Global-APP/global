@@ -6,7 +6,6 @@ async function conectarBanco() {
   mongoose.set('strictQuery', true);
   await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10_000 });
 
-  // Garante os índices únicos (guildId, msgId, ...) mesmo com NODE_ENV=production.
   const modelos = require('../models');
   await Promise.all(Object.values(modelos).map((modelo) => modelo.init()));
 

@@ -18,10 +18,11 @@ const PASTA_LOGS = 'logs';
 
 const PASTA_LISTAS = 'listas';
 
-// Só usados na migração dos JSONs antigos.
+// deprecado
 const ARQUIVO_CONFIG = 'config_global.json';
 
 const ARQUIVO_ANUNCIO = 'anuncio_global.json';
+//
 
 const COR_PADRAO_ANUNCIO = 0x0330EF;
 
@@ -34,25 +35,21 @@ const CANAL_REPORTS = "1563296711999225856";
 
 const COOLDOWN_REPORT = 30_000;
 
-// A 3ª mensagem idêntica seguida já é bloqueada.
 const SPAM_LIMITE = 3;
 
 const SPAM_JANELA_MS = 30_000;
 
 const REGEX_CONVITE = /(?:discord\.gg|discord(?:app)?\.com\/invite|fluxer\.gg|(?:web\.)?fluxer\.app\/(?:invite|i))\b[/\w-]*/i;
 
-// Também pega domínio solto com TLD comum (exemplo.com/algo), não só http(s) e www.
 const REGEX_LINK = /(?:https?:\/\/|www\.)\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|gg|io|app|me|xyz|link|ly|tv|dev|info|gl|br)\b(?:\/\S*)?/i;
 
 // Serviço de verificação NSFW (server.js).
 const NSFW_URL = process.env.NSFW_URL || 'http://localhost:3000';
 
-// Mesma API_KEY do server.js, quando ela estiver definida.
 const NSFW_API_KEY = process.env.NSFW_API_KEY || '';
 
 const NSFW_TIMEOUT_MS = 30_000;
 
-// Serviço fora do ar bloqueia a mídia (fail-closed) em vez de deixá-la passar.
 const NSFW_FALHA_BLOQUEIA = true;
 
 const EMOJI_OK = [
