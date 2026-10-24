@@ -1,6 +1,6 @@
 const { client } = require('../../lib/client');
-const { sql } = require('../../lib/database');
-const { estaBloqueado } = require('../../services/permissoes');
+const Canal = require('../../models/Canal');
+const Bloqueio = require('../../models/Bloqueio');
 const { negarSeNaoStaff } = require('./_comum');
 
 module.exports = {
@@ -11,18 +11,23 @@ module.exports = {
   async execute(message) {
     if (await negarSeNaoStaff(message)) return;
 
-    const lista = sql.listarCanais.all();
+    const [lista, bloqueados] = await Promise.all([
+      Canal.find().lean(),
+      Bloqueio.find({ tipo: 'servidor' }).distinct('id')
+    ]);
+
     if (lista.length === 0) {
       await message.channel.send('<:information2fill:1562606683371339784> Nenhum servidor conectado.');
       return;
     }
 
+    const bloqueadosSet = new Set(bloqueados);
     let texto = lista.map((c) => {
-      const g = client.guilds.get(c.guild_id);
+      const g = client.guilds.get(c.guildId);
       const nome = g && g.name ? g.name : 'Desconhecido';
-      return `• **${nome}** (\`${c.guild_id}\`)` +
+      return `• **${nome}** (\`${c.guildId}\`)` +
         (c.pausado ? ' ⏸️ pausado' : '') +
-        (estaBloqueado('servidor', c.guild_id) ? ' 🚫 bloqueado' : '');
+        (bloqueadosSet.has(c.guildId) ? ' 🚫 bloqueado' : '');
     }).join('\n');
     if (texto.length > 1900) texto = texto.slice(0, 1900) + '\n…';
 

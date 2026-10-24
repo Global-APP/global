@@ -1,41 +1,42 @@
 const { client } = require('../../lib/client');
-const { sql } = require('../../lib/database');
+const MensagemGlobal = require('../../models/MensagemGlobal');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild } = require('../filtros/moderacao');
 const { log } = require('../../util/logger');
 const { ehStaffOuDono } = require('../permissoes');
 const { infoMensagem, montarEmbedGlobal } = require('./mensagem');
 
-function ehMensagemOriginal(id) {
-  const r = sql.grupoPorMensagem.get(id);
-  return !!r && r.grupo_id === id;
+async function ehMensagemOriginal(id) {
+  const r = await MensagemGlobal.findOne({ msgId: String(id) }).lean();
+  return !!r && r.grupoId === String(id);
 }
 
 async function apagarCopiasDoGrupo(grupoId) {
-  const copias = sql.copiasDoGrupo.all(String(grupoId), String(grupoId));
+  const gId = String(grupoId);
+  const copias = await MensagemGlobal.find({ grupoId: gId, msgId: { $ne: gId } }).lean();
   const resultados = await Promise.allSettled(copias.map(async (c) => {
-    const canal = await client.channels.fetch(c.canal_id);
-    const m = await canal.messages.fetch(c.msg_id);
+    const canal = await client.channels.fetch(c.canalId);
+    const m = await canal.messages.fetch(c.msgId);
     await m.delete();
   }));
-  sql.removerGrupo.run(String(grupoId));
+  await MensagemGlobal.deleteMany({ grupoId: gId });
   return resultados.filter((r) => r.status === 'fulfilled').length;
 }
 
 async function sincronizarEdicao(antiga, nova) {
   if (!nova || !nova.id) return;
   const id = String(nova.id);
-  if (!ehMensagemOriginal(id)) return;
+  if (!(await ehMensagemOriginal(id))) return;
   if (antiga && antiga.content != null && antiga.content === nova.content) return;
 
   const canalOrigem = await client.channels.fetch(String(nova.channelId));
   const completa = await canalOrigem.messages.fetch(id);
   if (!completa.author || completa.author.bot) return;
 
-  const info = infoMensagem(completa);
+  const info = await infoMensagem(completa);
   const analise = analisarConteudo(completa.content);
 
-  if (!ehStaffOuDono(completa.author.id)) {
-    const motivo = motivoFiltroGuild(analise, configDaGuild(info.guildId));
+  if (!(await ehStaffOuDono(completa.author.id))) {
+    const motivo = motivoFiltroGuild(analise, await configDaGuild(info.guildId));
     if (motivo) {
       await apagarCopiasDoGrupo(id);
       await completa.delete().catch(() => {});
@@ -45,12 +46,12 @@ async function sincronizarEdicao(antiga, nova) {
   }
 
   const embed = montarEmbedGlobal(completa, info);
-  const copias = sql.copiasDoGrupo.all(id, id);
+  const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
 
   const resultados = await Promise.allSettled(copias.map(async (c) => {
-    const canal = await client.channels.fetch(c.canal_id);
-    const m = await canal.messages.fetch(c.msg_id);
-    if (motivoFiltroGuild(analise, configDaGuild(c.guild_id))) {
+    const canal = await client.channels.fetch(c.canalId);
+    const m = await canal.messages.fetch(c.msgId);
+    if (motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
       await m.delete();
       return 'removida';
     }

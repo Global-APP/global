@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { DONO_ID, MUBI_ID } = require('../../config');
-const { sql } = require('../../lib/database');
+const Canal = require('../../models/Canal');
+const MensagemGlobal = require('../../models/MensagemGlobal');
 
 module.exports = {
   name: 'botinfo',
@@ -8,8 +9,11 @@ module.exports = {
   description: 'Envia as informações principais do Global.',
 
   async execute(message) {
-    const totalServidores = sql.contarCanais.get().n;
-    const ativos = sql.contarUsuariosAtivos.get().n;
+    const [totalServidores, autores] = await Promise.all([
+      Canal.countDocuments(),
+      MensagemGlobal.distinct('autorId')
+    ]);
+    const ativos = autores.length;
     const totalUsuarios = ativos > 0 ? ativos : 1;
 
     try {
@@ -20,7 +24,7 @@ module.exports = {
         .addFields(
           { name: '<:information2fill:1562606683371339784> Desenvolvedor', value: `<@${DONO_ID}> (\`xMqR\`)\n<@${MUBI_ID}> (\`Mubi\`)`, inline: true },
           { name: '<:brushaifill:1562606683371339785> Estatísticas:', value: `**${totalServidores}** Servidores\n**${totalUsuarios}+** Usuários ativos`, inline: true },
-          { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: '• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** `@fluxerjs/core`\n• **Banco de dados:** SQLite3\n• **Prefixo:** `g.`\n• **Status:** Operacional', inline: false }
+          { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: '• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** `@fluxerjs/core`\n• **Banco de dados:** MongoDB\n• **Prefixo:** `g.`\n• **Status:** Operacional', inline: false }
         );
 
       await message.channel.send({ embeds: [embedInfo] });

@@ -1,12 +1,12 @@
 const { client } = require('../lib/client');
-const { sql } = require('../lib/database');
+const Canal = require('../models/Canal');
 const { log } = require('../util/logger');
 
 const STATUS_ROTATIVOS = [
-  () => 'Globalmente conversando',
-  () => `Estou em ${sql.contarCanais.get().n} comunidades`,
-  () => 'Alguma dúvida? Me mencione :D',
-  () => 'Alguém realmente lê isso?'
+  async () => 'Globalmente conversando',
+  async () => `Estou em ${await Canal.countDocuments()} comunidades`,
+  async () => 'Alguma dúvida? Me mencione :D',
+  async () => 'Alguém realmente lê isso?'
 ];
 
 let intervaloStatus = null;
@@ -18,12 +18,10 @@ function iniciarStatusRotativo() {
   }
 
   let i = 0;
-  const atualizar = () => {
+  const atualizar = async () => {
     try {
-      client.user.setPresence({
-        status: 'online',
-        customStatus: { text: STATUS_ROTATIVOS[i % STATUS_ROTATIVOS.length]() }
-      });
+      const texto = await STATUS_ROTATIVOS[i % STATUS_ROTATIVOS.length]();
+      client.user.setPresence({ status: 'online', customStatus: { text: texto } });
       i++;
     } catch (e) {
       log.error('STATUS', 'Erro ao atualizar presença', e);

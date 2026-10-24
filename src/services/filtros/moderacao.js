@@ -1,5 +1,5 @@
 const { EMOJI_BLOQUEIO } = require('../../config');
-const { sql } = require('../../lib/database');
+const ConfigGuild = require('../../models/ConfigGuild');
 const { log, descreverContexto } = require('../../util/logger');
 const { reagir } = require('../../util/reacoes');
 const { temLink } = require('./links');
@@ -11,18 +11,18 @@ function analisarConteudo(texto) {
   return { palavra: acharPalavraProibida(texto), link: temLink(texto) };
 }
 
-function configDaGuild(guildId) {
-  const row = sql.getConfigGuild.get(String(guildId));
+async function configDaGuild(guildId) {
+  const row = await ConfigGuild.findOne({ guildId: String(guildId) }).lean();
   return {
-    filtrar_palavroes: row ? row.filtrar_palavroes : 0,
-    filtrar_links: row ? row.filtrar_links : 0
+    filtrarPalavroes: !!(row && row.filtrarPalavroes),
+    filtrarLinks: !!(row && row.filtrarLinks)
   };
 }
 
-// cfg tanto pode vir de configDaGuild quanto de uma linha de destinosAtivos.
+// cfg tanto pode vir de configDaGuild quanto de um destino de listarDestinosAtivos.
 function motivoFiltroGuild(analise, cfg) {
-  if (cfg.filtrar_links && analise.link) return 'links não são permitidos neste servidor';
-  if (cfg.filtrar_palavroes && analise.palavra) return 'sua mensagem contém uma palavra proibida';
+  if (cfg.filtrarLinks && analise.link) return 'links não são permitidos neste servidor';
+  if (cfg.filtrarPalavroes && analise.palavra) return 'sua mensagem contém uma palavra proibida';
   return null;
 }
 

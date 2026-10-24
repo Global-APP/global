@@ -1,9 +1,10 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
 const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
-const { sql } = require('../../lib/database');
+const CorServidor = require('../../models/CorServidor');
+const Staff = require('../../models/Staff');
 
-function infoMensagem(message) {
+async function infoMensagem(message) {
   const autor = message.author;
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
   const g = message.guild || client.guilds.get(guildId);
@@ -12,8 +13,12 @@ function infoMensagem(message) {
   const nickname = autor.displayName || autor.username;
   const username = autor.username;
 
+  const [corServidor, ehStaff] = await Promise.all([
+    CorServidor.findOne({ guildId }).lean(),
+    Staff.exists({ userId: String(autor.id) })
+  ]);
+
   let authorText = `${nickname} (@${username}#${autor.discriminator})`;
-  const corServidor = sql.corDoServidor.get(guildId);
   let corEmbed = corServidor ? corServidor.cor : 0x0B0B0B;
 
   if (autor.id === DONO_ID) {
@@ -22,7 +27,7 @@ function infoMensagem(message) {
   } else if (autor.id === MUBI_ID) {
     authorText = `${nickname} (@${username}#${autor.discriminator}) - Desenvolvedor do Global`;
     corEmbed = COR_EMBED_MUBI;
-  } else if (sql.ehStaff.get(String(autor.id))) {
+  } else if (ehStaff) {
     authorText = `${nickname} (@${username}#${autor.discriminator}) - Staff`;
     corEmbed = 0xeb0075;
   }

@@ -1,7 +1,9 @@
 const { Events } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
 const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS } = require('../config');
-const { sql } = require('../lib/database');
+const Canal = require('../models/Canal');
+const ConfigGuild = require('../models/ConfigGuild');
+const Staff = require('../models/Staff');
 const { limparFalhasDestino } = require('../services/destinos');
 const { ehMensagemOriginal, sincronizarEdicao, apagarCopiasDoGrupo } = require('../services/chat/sincronizacao');
 const { retransmitirMensagemGlobal } = require('../services/chat/retransmissao');
@@ -11,18 +13,20 @@ const { log, descreverContexto } = require('../util/logger');
 const { iniciarStatusRotativo } = require('../services/status');
 
 function registrarEventos() {
-  client.on(Events.Ready, () => {
-    log.ok('BOT', `Conectado como ${client.user.username} (${client.user.id}) | ${sql.contarCanais.get().n} servidor(es) conectado(s) | ${sql.contarStaffs.get().n} staff(s)`);
+  client.on(Events.Ready, async () => {
+    const [canais, staffs] = await Promise.all([Canal.countDocuments(), Staff.countDocuments()]);
+    log.ok('BOT', `Conectado como ${client.user.username} (${client.user.id}) | ${canais} servidor(es) conectado(s) | ${staffs} staff(s)`);
     iniciarStatusRotativo();
   });
 
-  client.on(Events.GuildDelete, (guild) => {
+  client.on(Events.GuildDelete, async (guild) => {
     try {
-      const r = sql.removerCanal.run(String(guild.id));
-      sql.removerConfigGuild.run(String(guild.id));
-      if (r.changes > 0) {
-        limparFalhasDestino(guild.id);
-        log.warn('LIMPEZA', `Bot saiu/servidor deletado (${guild.id}); conexão global removida.`);
+      const guildId = String(guild.id);
+      const r = await Canal.deleteOne({ guildId });
+      await ConfigGuild.deleteOne({ guildId });
+      if (r.deletedCount > 0) {
+        limparFalhasDestino(guildId);
+        log.warn('LIMPEZA', `Bot saiu/servidor deletado (${guildId}); conexão global removida.`);
       }
     } catch (e) {
       log.error('LIMPEZA', 'Erro ao tratar GuildDelete', e);
@@ -45,8 +49,8 @@ function registrarEventos() {
 
       const guildId = idDoServidor(message);
       if (guildId) {
-        const row = sql.canalDoServidor.get(String(guildId));
-        if (row && message.channel.id === row.canal_id) {
+        const row = await Canal.findOne({ guildId: String(guildId) }).lean();
+        if (row && message.channel.id === row.canalId) {
           if (row.pausado) return;
           await retransmitirMensagemGlobal(message);
         }
@@ -68,7 +72,7 @@ function registrarEventos() {
     try {
       if (!msg || !msg.id) return;
       const id = String(msg.id);
-      if (!ehMensagemOriginal(id)) return;
+      if (!(await ehMensagemOriginal(id))) return;
       const n = await apagarCopiasDoGrupo(id);
       log.info('SYNC', `Mensagem ${id} apagada na origem; ${n} cópia(s) removida(s).`);
     } catch (e) {

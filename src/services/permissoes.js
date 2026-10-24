@@ -1,6 +1,7 @@
 const { PermissionFlags } = require('@fluxerjs/core');
 const { DONO_ID } = require('../config');
-const { sql } = require('../lib/database');
+const Staff = require('../models/Staff');
+const Bloqueio = require('../models/Bloqueio');
 const { log } = require('../util/logger');
 
 async function membroPodeGerenciarCanais(message) {
@@ -17,13 +18,14 @@ async function membroPodeGerenciarCanais(message) {
   }
 }
 
-function ehStaffOuDono(userId) {
+async function ehStaffOuDono(userId) {
   const id = String(userId);
-  return id === DONO_ID || !!sql.ehStaff.get(id);
+  if (id === DONO_ID) return true;
+  return !!(await Staff.exists({ userId: id }));
 }
 
-function estaBloqueado(tipo, id) {
-  return !!sql.getBloqueio.get(tipo, String(id));
+async function estaBloqueado(tipo, id) {
+  return !!(await Bloqueio.exists({ tipo, id: String(id) }));
 }
 
 async function temPermissaoConfig(message) {

@@ -12,13 +12,13 @@ const SUPORTE_GUILD_ID = '1561937517035388928';
 
 const SUPORTE_CANAL_BOAS_VINDAS = '1561937517035388931';
 
-const ARQUIVO_DB = 'global.db';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/global';
 
 const PASTA_LOGS = 'logs';
 
 const PASTA_LISTAS = 'listas';
 
-// Só usados na migração única para o SQLite.
+// Só usados na migração dos JSONs antigos.
 const ARQUIVO_CONFIG = 'config_global.json';
 
 const ARQUIVO_ANUNCIO = 'anuncio_global.json';
@@ -77,9 +77,9 @@ module.exports = {
   COOLDOWN_TEMPO,
   SUPORTE_GUILD_ID,
   SUPORTE_CANAL_BOAS_VINDAS,
-  ARQUIVO_DB,
   PASTA_LOGS,
   PASTA_LISTAS,
+  MONGODB_URI,
   ARQUIVO_CONFIG,
   ARQUIVO_ANUNCIO,
   COR_PADRAO_ANUNCIO,

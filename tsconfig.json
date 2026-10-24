@@ -14,6 +14,6 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["index.js", "src/**/*.js"],
+  "include": ["index.js", "migrations/**/*.js", "src/**/*.js"],
   "exclude": ["node_modules"]
 }

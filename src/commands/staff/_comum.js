@@ -9,7 +9,7 @@ function tipoBloqueio(token) {
 }
 
 async function negarSeNaoStaff(message) {
-  if (ehStaffOuDono(message.author.id)) return false;
+  if (await ehStaffOuDono(message.author.id)) return false;
   log.warn('ACESSO', `Acesso negado (staff) para ${descreverContexto(message)}`);
   await message.channel.send('<:closecirclefill:1562606683371339786> **Somente a equipe do Global** pode realizar essa ação.');
   return true;

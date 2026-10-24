@@ -8,7 +8,7 @@ module.exports = {
   description: 'Mostra todos os comandos do Global.',
 
   async execute(message) {
-    const staff = ehStaffOuDono(message.author.id);
+    const staff = await ehStaffOuDono(message.author.id);
     const dono = message.author.id === DONO_ID;
 
     const publico = (nome, valor) => ({ nome, valor, emoji: '<:togglefill:1562606683371339783>' });

@@ -1,54 +1,63 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
 const { COR_PADRAO_ANUNCIO } = require('../config');
-const { sql } = require('../lib/database');
-const { tratarFalhaDestino, registrarSucessoDestino } = require('./destinos');
+const Anuncio = require('../models/Anuncio');
+const { tratarFalhaDestino, registrarSucessoDestino, listarDestinosAtivos } = require('./destinos');
 const { log } = require('../util/logger');
 const { marcarEnvio } = require('../util/ratelimit');
 
-function carregarAnuncio() {
-  const row = sql.getAnuncio.get();
-  if (!row) {
-    return { ativo: false, titulo: null, descricao: null, cor: COR_PADRAO_ANUNCIO, autor: null, footer: null, intervalo: 0 };
-  }
-  return { ...row, ativo: row.ativo === 1 };
+const CHAVE = 'global';
+
+function anuncioPadrao() {
+  return { ativo: false, titulo: null, descricao: null, cor: COR_PADRAO_ANUNCIO, autor: null, footer: null, intervalo: 0 };
 }
 
-let estadoAnuncio = carregarAnuncio();
+let estadoAnuncio = anuncioPadrao();
 
 let contadorAnuncio = 0;
 
-function salvarAnuncio() {
+async function carregarAnuncio() {
+  const row = await Anuncio.findOne({ chave: CHAVE }).lean();
+  estadoAnuncio = row
+    ? {
+        ativo: !!row.ativo,
+        titulo: row.titulo ?? null,
+        descricao: row.descricao ?? null,
+        cor: row.cor ?? COR_PADRAO_ANUNCIO,
+        autor: row.autor ?? null,
+        footer: row.footer ?? null,
+        intervalo: row.intervalo || 0
+      }
+    : anuncioPadrao();
+}
+
+async function salvarAnuncio() {
   try {
-    sql.upsertAnuncio.run({
-      ativo: estadoAnuncio.ativo ? 1 : 0,
-      titulo: estadoAnuncio.titulo ?? null,
-      descricao: estadoAnuncio.descricao ?? null,
-      cor: estadoAnuncio.cor ?? COR_PADRAO_ANUNCIO,
-      autor: estadoAnuncio.autor ?? null,
-      footer: estadoAnuncio.footer ?? null,
-      intervalo: estadoAnuncio.intervalo || 0
-    });
+    await Anuncio.findOneAndUpdate(
+      { chave: CHAVE },
+      { $set: { ...estadoAnuncio, chave: CHAVE } },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
   } catch (e) {
     log.error('DB', 'Erro ao salvar anúncio', e);
   }
 }
 
-function desativarAnuncio() {
+async function desativarAnuncio() {
   estadoAnuncio.ativo = false;
   contadorAnuncio = 0;
-  salvarAnuncio();
+  await salvarAnuncio();
 }
 
-function agendarAnuncio(anuncio, intervalo) {
+async function agendarAnuncio(anuncio, intervalo) {
   estadoAnuncio = { ativo: true, ...anuncio, intervalo };
   contadorAnuncio = 0;
-  salvarAnuncio();
+  await salvarAnuncio();
 }
 
-function importarAnuncio(estado) {
+async function importarAnuncio(estado) {
   estadoAnuncio = estado;
-  salvarAnuncio();
+  await salvarAnuncio();
 }
 
 function montarEmbedAnuncio(a) {
@@ -62,23 +71,23 @@ function montarEmbedAnuncio(a) {
 
 async function enviarAnuncioParaTodos(anuncio) {
   const embed = montarEmbedAnuncio(anuncio);
-  const destinos = sql.destinosAtivos.all();
+  const destinos = await listarDestinosAtivos();
   let enviados = 0;
-  for (const { guild_id: gId, canal_id: cId } of destinos) {
+  for (const { guildId, canalId } of destinos) {
     try {
       /** @type {any} */
-      const canal = await client.channels.fetch(cId);
+      const canal = await client.channels.fetch(canalId);
       if (canal) {
-        marcarEnvio(cId);
+        marcarEnvio(canalId);
         await canal.send({ embeds: [embed] });
         enviados++;
-        registrarSucessoDestino(gId);
+        registrarSucessoDestino(guildId);
       } else {
-        tratarFalhaDestino(gId, new Error('canal não encontrado'));
+        await tratarFalhaDestino(guildId, new Error('canal não encontrado'));
       }
     } catch (e) {
-      log.error('ANUNCIO', `Falha ao enviar para o servidor ${gId}`, e);
-      tratarFalhaDestino(gId, e);
+      log.error('ANUNCIO', `Falha ao enviar para o servidor ${guildId}`, e);
+      await tratarFalhaDestino(guildId, e);
     }
   }
   log.info('ANUNCIO', `Anúncio enviado para ${enviados}/${destinos.length} servidor(es).`);
@@ -95,6 +104,7 @@ async function contarMensagemParaAnuncio() {
 }
 
 module.exports = {
+  iniciarAnuncio: carregarAnuncio,
   desativarAnuncio,
   agendarAnuncio,
   importarAnuncio,

@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { PASTA_LISTAS } = require('../../config');
-const { sql } = require('../../lib/database');
+const PalavraProibida = require('../../models/PalavraProibida');
+const PalavraLiberada = require('../../models/PalavraLiberada');
 const { log } = require('../../util/logger');
 const { limparBase, aplicarLeet, extrairTokens, colapsar1, colapsar2 } = require('./normalizacao');
 
@@ -47,16 +48,22 @@ function carregarArquivosDeListas() {
   return total;
 }
 
-function recarregarPalavras() {
+async function recarregarPalavras() {
   palavrasUnicas = new Set();
   palavrasColapsadas = new Set();
   frasesProibidas = [];
 
   const dosArquivos = carregarArquivosDeListas();
-  let doBanco = 0;
-  for (const { palavra } of sql.todasPalavras.all()) if (adicionarEntrada(palavra)) doBanco++;
 
-  palavrasLiberadas = new Set(sql.todasLiberadas.all().map(({ palavra }) => colapsar2(limparBase(palavra))));
+  const [proibidas, liberadas] = await Promise.all([
+    PalavraProibida.find().lean(),
+    PalavraLiberada.find().lean()
+  ]);
+
+  let doBanco = 0;
+  for (const { palavra } of proibidas) if (adicionarEntrada(palavra)) doBanco++;
+
+  palavrasLiberadas = new Set(liberadas.map(({ palavra }) => colapsar2(limparBase(palavra))));
 
   log.info('FILTRO', `Filtro carregado: ${dosArquivos} palavra(s) de listas + ${doBanco} personalizada(s) | ${palavrasLiberadas.size} liberada(s).`);
 }
