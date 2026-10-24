@@ -68,6 +68,7 @@ module.exports = {
     if (midia) trecho += `\n${midia}`;
 
     try {
+      /** @type {any} */
       const canal = await client.channels.fetch(CANAL_REPORTS);
       if (!canal) throw new Error('canal de denúncias não encontrado');
 

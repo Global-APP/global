@@ -77,13 +77,14 @@ function registrarEventos() {
   });
 
   client.on(Events.GuildMemberAdd, async (member) => {
-    const guildId = member.guild ? member.guild.id : member.guildId;
+    const guildId = member.guild ? member.guild.id : /** @type {any} */ (member).guildId;
     if (guildId !== SUPORTE_GUILD_ID) return;
     if (member.user && member.user.bot) return;
 
     const userId = member.user ? member.user.id : member.id;
 
     try {
+      /** @type {any} */
       const canal = await client.channels.fetch(SUPORTE_CANAL_BOAS_VINDAS);
       if (!canal) return;
       await canal.send(`<:heart2fill:1562975992086007808> Saalve <@${userId}>, bem-vindo(a) a minha casa, o lugar onde surgi e cresci, aqui leia sobre minhas atualizações, erros e entre outras coisas...`);

@@ -9,6 +9,13 @@ db.pragma('journal_mode = WAL');
 
 db.pragma('foreign_keys = ON');
 
+// As linhas vêm do SQLite sem tipo; o formato é validado em runtime.
+/**
+ * @param {string} query
+ * @returns {any}
+ */
+const prepare = (query) => db.prepare(query);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS canais (
     guild_id TEXT PRIMARY KEY,
@@ -70,7 +77,7 @@ db.exec(`
 `);
 
 // Migração: bancos antigos não têm a coluna.
-if (!db.prepare('PRAGMA table_info(canais)').all().some((c) => c.name === 'pausado')) {
+if (!prepare('PRAGMA table_info(canais)').all().some((c) => c.name === 'pausado')) {
   db.exec('ALTER TABLE canais ADD COLUMN pausado INTEGER NOT NULL DEFAULT 0');
 }
 
@@ -84,17 +91,17 @@ db.exec(`
 `);
 
 const sql = {
-  todosCanais: db.prepare('SELECT guild_id, canal_id FROM canais'),
-  contarCanais: db.prepare('SELECT COUNT(*) AS n FROM canais'),
-  upsertCanal: db.prepare(`
+  todosCanais: prepare('SELECT guild_id, canal_id FROM canais'),
+  contarCanais: prepare('SELECT COUNT(*) AS n FROM canais'),
+  upsertCanal: prepare(`
     INSERT INTO canais (guild_id, canal_id) VALUES (?, ?)
     ON CONFLICT(guild_id) DO UPDATE SET canal_id = excluded.canal_id
   `),
-  canalDoServidor: db.prepare('SELECT canal_id, pausado FROM canais WHERE guild_id = ?'),
-  removerCanal: db.prepare('DELETE FROM canais WHERE guild_id = ?'),
-  listarCanais: db.prepare('SELECT guild_id, canal_id, pausado FROM canais'),
-  setPausado: db.prepare('UPDATE canais SET pausado = ? WHERE guild_id = ?'),
-  destinosAtivos: db.prepare(`
+  canalDoServidor: prepare('SELECT canal_id, pausado FROM canais WHERE guild_id = ?'),
+  removerCanal: prepare('DELETE FROM canais WHERE guild_id = ?'),
+  listarCanais: prepare('SELECT guild_id, canal_id, pausado FROM canais'),
+  setPausado: prepare('UPDATE canais SET pausado = ? WHERE guild_id = ?'),
+  destinosAtivos: prepare(`
     SELECT c.guild_id, c.canal_id,
            COALESCE(g.filtrar_palavroes, 0) AS filtrar_palavroes,
            COALESCE(g.filtrar_links, 0) AS filtrar_links
@@ -104,42 +111,42 @@ const sql = {
       AND NOT EXISTS (SELECT 1 FROM bloqueados b WHERE b.tipo = 'servidor' AND b.id = c.guild_id)
   `),
 
-  ehStaff: db.prepare('SELECT 1 FROM staffs WHERE user_id = ?'),
-  addStaff: db.prepare('INSERT OR IGNORE INTO staffs (user_id) VALUES (?)'),
-  delStaff: db.prepare('DELETE FROM staffs WHERE user_id = ?'),
-  contarStaffs: db.prepare('SELECT COUNT(*) AS n FROM staffs'),
+  ehStaff: prepare('SELECT 1 FROM staffs WHERE user_id = ?'),
+  addStaff: prepare('INSERT OR IGNORE INTO staffs (user_id) VALUES (?)'),
+  delStaff: prepare('DELETE FROM staffs WHERE user_id = ?'),
+  contarStaffs: prepare('SELECT COUNT(*) AS n FROM staffs'),
 
-  getBloqueio: db.prepare('SELECT motivo FROM bloqueados WHERE tipo = ? AND id = ?'),
-  addBloqueio: db.prepare('INSERT OR REPLACE INTO bloqueados (tipo, id, motivo, por, criado_em) VALUES (?, ?, ?, ?, ?)'),
-  delBloqueio: db.prepare('DELETE FROM bloqueados WHERE tipo = ? AND id = ?'),
-  listarBloqueios: db.prepare('SELECT tipo, id, motivo FROM bloqueados ORDER BY criado_em DESC'),
+  getBloqueio: prepare('SELECT motivo FROM bloqueados WHERE tipo = ? AND id = ?'),
+  addBloqueio: prepare('INSERT OR REPLACE INTO bloqueados (tipo, id, motivo, por, criado_em) VALUES (?, ?, ?, ?, ?)'),
+  delBloqueio: prepare('DELETE FROM bloqueados WHERE tipo = ? AND id = ?'),
+  listarBloqueios: prepare('SELECT tipo, id, motivo FROM bloqueados ORDER BY criado_em DESC'),
 
-  todasPalavras: db.prepare('SELECT palavra FROM palavras_proibidas ORDER BY palavra'),
-  addPalavra: db.prepare('INSERT OR IGNORE INTO palavras_proibidas (palavra) VALUES (?)'),
-  delPalavra: db.prepare('DELETE FROM palavras_proibidas WHERE palavra = ?'),
-  todasLiberadas: db.prepare('SELECT palavra FROM palavras_liberadas'),
-  addLiberada: db.prepare('INSERT OR IGNORE INTO palavras_liberadas (palavra) VALUES (?)'),
-  delLiberada: db.prepare('DELETE FROM palavras_liberadas WHERE palavra = ?'),
+  todasPalavras: prepare('SELECT palavra FROM palavras_proibidas ORDER BY palavra'),
+  addPalavra: prepare('INSERT OR IGNORE INTO palavras_proibidas (palavra) VALUES (?)'),
+  delPalavra: prepare('DELETE FROM palavras_proibidas WHERE palavra = ?'),
+  todasLiberadas: prepare('SELECT palavra FROM palavras_liberadas'),
+  addLiberada: prepare('INSERT OR IGNORE INTO palavras_liberadas (palavra) VALUES (?)'),
+  delLiberada: prepare('DELETE FROM palavras_liberadas WHERE palavra = ?'),
 
-  corDoServidor: db.prepare('SELECT cor FROM cores_servidores WHERE guild_id = ?'),
-  upsertCor: db.prepare(`
+  corDoServidor: prepare('SELECT cor FROM cores_servidores WHERE guild_id = ?'),
+  upsertCor: prepare(`
     INSERT INTO cores_servidores (guild_id, cor) VALUES (?, ?)
     ON CONFLICT(guild_id) DO UPDATE SET cor = excluded.cor
   `),
 
-  getConfigGuild: db.prepare('SELECT filtrar_palavroes, filtrar_links FROM config_guilds WHERE guild_id = ?'),
-  setFiltroPalavroes: db.prepare(`
+  getConfigGuild: prepare('SELECT filtrar_palavroes, filtrar_links FROM config_guilds WHERE guild_id = ?'),
+  setFiltroPalavroes: prepare(`
     INSERT INTO config_guilds (guild_id, filtrar_palavroes) VALUES (?, ?)
     ON CONFLICT(guild_id) DO UPDATE SET filtrar_palavroes = excluded.filtrar_palavroes
   `),
-  setFiltroLinks: db.prepare(`
+  setFiltroLinks: prepare(`
     INSERT INTO config_guilds (guild_id, filtrar_links) VALUES (?, ?)
     ON CONFLICT(guild_id) DO UPDATE SET filtrar_links = excluded.filtrar_links
   `),
-  removerConfigGuild: db.prepare('DELETE FROM config_guilds WHERE guild_id = ?'),
+  removerConfigGuild: prepare('DELETE FROM config_guilds WHERE guild_id = ?'),
 
-  getAnuncio: db.prepare('SELECT * FROM anuncio WHERE id = 1'),
-  upsertAnuncio: db.prepare(`
+  getAnuncio: prepare('SELECT * FROM anuncio WHERE id = 1'),
+  upsertAnuncio: prepare(`
     INSERT INTO anuncio (id, ativo, titulo, descricao, cor, autor, footer, intervalo)
     VALUES (1, @ativo, @titulo, @descricao, @cor, @autor, @footer, @intervalo)
     ON CONFLICT(id) DO UPDATE SET
@@ -147,24 +154,24 @@ const sql = {
       cor = excluded.cor, autor = excluded.autor, footer = excluded.footer, intervalo = excluded.intervalo
   `),
 
-  inserirMensagem: db.prepare(`
+  inserirMensagem: prepare(`
     INSERT OR IGNORE INTO mensagens_globais (grupo_id, guild_id, canal_id, msg_id, autor_id, criado_em)
     VALUES (?, ?, ?, ?, ?, ?)
   `),
-  grupoPorMensagem: db.prepare('SELECT grupo_id FROM mensagens_globais WHERE msg_id = ?'),
-  mensagemDoGrupoNoServidor: db.prepare(
+  grupoPorMensagem: prepare('SELECT grupo_id FROM mensagens_globais WHERE msg_id = ?'),
+  mensagemDoGrupoNoServidor: prepare(
     'SELECT canal_id, msg_id FROM mensagens_globais WHERE grupo_id = ? AND guild_id = ? LIMIT 1'
   ),
   // A mensagem original do grupo tem msg_id == grupo_id.
-  origemDoGrupo: db.prepare(
+  origemDoGrupo: prepare(
     'SELECT guild_id, canal_id, autor_id FROM mensagens_globais WHERE grupo_id = ? AND msg_id = ? LIMIT 1'
   ),
-  copiasDoGrupo: db.prepare(
+  copiasDoGrupo: prepare(
     'SELECT guild_id, canal_id, msg_id FROM mensagens_globais WHERE grupo_id = ? AND msg_id != ?'
   ),
-  removerGrupo: db.prepare('DELETE FROM mensagens_globais WHERE grupo_id = ?'),
-  limparMensagensAntigas: db.prepare('DELETE FROM mensagens_globais WHERE criado_em < ?'),
-  contarUsuariosAtivos: db.prepare('SELECT COUNT(DISTINCT autor_id) AS n FROM mensagens_globais')
+  removerGrupo: prepare('DELETE FROM mensagens_globais WHERE grupo_id = ?'),
+  limparMensagensAntigas: prepare('DELETE FROM mensagens_globais WHERE criado_em < ?'),
+  contarUsuariosAtivos: prepare('SELECT COUNT(DISTINCT autor_id) AS n FROM mensagens_globais')
 };
 
 const registrarMensagens = db.transaction((linhas) => {

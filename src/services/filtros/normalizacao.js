@@ -13,6 +13,7 @@ function limparBase(texto) {
   // NFKD também converte fullwidth em ASCII.
   let t = String(texto || '').normalize('NFKD').toLowerCase();
   t = t.replace(/[\u0300-\u036f\u200b-\u200f\u2060\ufeff\u00ad]/g, '');
+  // eslint-disable-next-line no-control-regex -- \u0000 delimita o intervalo ASCII
   t = t.replace(/[^\u0000-\u007f]/g, (c) => HOMOGLIFOS[c] || c);
   return t;
 }

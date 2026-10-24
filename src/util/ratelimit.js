@@ -4,7 +4,7 @@ const janelaEnvios = new Map();
 
 let ultimoLogRL = 0;
 
-let relaysAtivos = 0;
+const relaysAtivos = 0;
 
 function marcarEnvio(canalId) {
   const k = String(canalId);

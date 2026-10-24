@@ -24,6 +24,10 @@ function midiaParaVerificar(message) {
   return null;
 }
 
+/**
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
 async function consultarServicoNsfw(url) {
   const headers = { 'content-type': 'application/json' };
   if (NSFW_API_KEY) headers['x-api-key'] = NSFW_API_KEY;
@@ -34,8 +38,10 @@ async function consultarServicoNsfw(url) {
     body: JSON.stringify({ url }),
     signal: AbortSignal.timeout(NSFW_TIMEOUT_MS)
   });
+  /** @type {any} */
   const dados = await res.json().catch(() => ({}));
   if (!res.ok) {
+    /** @type {any} */
     const err = new Error(dados.erro || `HTTP ${res.status}`);
     err.status = res.status;
     throw err;

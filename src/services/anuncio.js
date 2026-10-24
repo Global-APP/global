@@ -66,6 +66,7 @@ async function enviarAnuncioParaTodos(anuncio) {
   let enviados = 0;
   for (const { guild_id: gId, canal_id: cId } of destinos) {
     try {
+      /** @type {any} */
       const canal = await client.channels.fetch(cId);
       if (canal) {
         marcarEnvio(cId);

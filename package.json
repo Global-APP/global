@@ -2,8 +2,21 @@
   "name": "global",
   "version": "1.0.0",
   "main": "index.js",
+  "scripts": {
+    "start": "bun index.js",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@fluxerjs/core": "latest",
     "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "typescript": "^7.0.2"
   }
 }

@@ -89,6 +89,7 @@ async function retransmitirMensagemGlobal(message) {
   const filtrados = candidatos.length - destinos.length;
 
   const resultados = await Promise.allSettled(destinos.map(async (destino) => {
+    /** @type {any} */
     const canal = await client.channels.fetch(destino.canal_id);
     if (!canal) throw new Error('canal não encontrado');
 

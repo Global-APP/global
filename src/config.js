@@ -39,7 +39,7 @@ const SPAM_LIMITE = 3;
 
 const SPAM_JANELA_MS = 30_000;
 
-const REGEX_CONVITE = /(?:discord\.gg|discord(?:app)?\.com\/invite|fluxer\.gg|(?:web\.)?fluxer\.app\/(?:invite|i))\b[\/\w-]*/i;
+const REGEX_CONVITE = /(?:discord\.gg|discord(?:app)?\.com\/invite|fluxer\.gg|(?:web\.)?fluxer\.app\/(?:invite|i))\b[/\w-]*/i;
 
 // Também pega domínio solto com TLD comum (exemplo.com/algo), não só http(s) e www.
 const REGEX_LINK = /(?:https?:\/\/|www\.)\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|gg|io|app|me|xyz|link|ly|tv|dev|info|gl|br)\b(?:\/\S*)?/i;
