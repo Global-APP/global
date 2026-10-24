@@ -1,0 +1,2 @@
+# global
+O bot.
