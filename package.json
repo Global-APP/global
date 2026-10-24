@@ -2,6 +2,7 @@
   "name": "global",
   "version": "1.0.0",
   "main": "index.js",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "scripts": {
     "start": "bun index.js",
     "lint": "eslint .",
