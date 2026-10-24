@@ -1,0 +1,9 @@
+{
+  "name": "global",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@fluxerjs/core": "latest",
+    "better-sqlite3": "^13.0.3"
+  }
+}
