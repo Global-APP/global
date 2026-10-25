@@ -1,11 +1,14 @@
 const { RETENCAO_MENSAGENS_MS } = require('../config');
 const MensagemGlobal = require('../models/MensagemGlobal');
 const { log } = require('../util/logger');
+const { limparWebhooksAntigos } = require('./webhooks');
 
 async function limparMensagensAntigas() {
   try {
     const r = await MensagemGlobal.deleteMany({ criadoEm: { $lt: Date.now() - RETENCAO_MENSAGENS_MS } });
     if (r.deletedCount > 0) log.info('DB', `Limpeza: ${r.deletedCount} vínculo(s) de mensagem antigo(s) removido(s).`);
+    const webhooksRemovidas = await limparWebhooksAntigos();
+    if (webhooksRemovidas > 0) log.info('DB', `Limpeza: ${webhooksRemovidas} webhook(s) antiga(s) removida(s).`);
   } catch (e) {
     log.error('DB', 'Erro ao limpar mensagens antigas', e);
   }

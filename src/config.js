@@ -44,6 +44,8 @@ const REGEX_CONVITE = /(?:discord\.gg|discord(?:app)?\.com\/invite|fluxer\.gg|(?
 const REGEX_LINK = /(?:https?:\/\/|www\.)\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|gg|io|app|me|xyz|link|ly|tv|dev|info|gl|br)\b(?:\/\S*)?/i;
 
 // Serviço de verificação NSFW (server.js).
+const NSFW_ENABLED = String(process.env.NSFW_ENABLED || 'true').trim().toLowerCase() !== 'false';
+
 const NSFW_URL = process.env.NSFW_URL || 'http://localhost:3000';
 
 const NSFW_API_KEY = process.env.NSFW_API_KEY || '';
@@ -88,6 +90,7 @@ module.exports = {
   SPAM_JANELA_MS,
   REGEX_CONVITE,
   REGEX_LINK,
+  NSFW_ENABLED,
   NSFW_URL,
   NSFW_API_KEY,
   NSFW_TIMEOUT_MS,

@@ -4,6 +4,7 @@ const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { membroPodeGerenciarCanais } = require('../../services/permissoes');
+const { obterWebhook } = require('../../services/webhooks');
 
 module.exports = {
   name: 'config',
@@ -25,7 +26,16 @@ module.exports = {
 
     const gId = String(guildId);
     const anterior = await Guild.findOne({ guildId: gId, canalId: { $ne: null } }).lean();
-    await Guild.findOneAndUpdate({ guildId: gId }, { canalId: String(message.channel.id) }, { upsert: true });
+    try {
+      await obterWebhook(gId, String(message.channel.id), message.channel);
+    } catch (e) {
+      log.error('CONFIG', `Falha ao criar webhook em ${descreverContexto(message)}`, e);
+      await message.channel.send(
+        '<:closecirclefill:1562606683371339786> Não consegui criar a webhook neste canal. Confira se o bot tem a permissão **Gerenciar Webhooks** e tente novamente.'
+      );
+      return;
+    }
+
     limparFalhasDestino(gId);
     log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canalId} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
 

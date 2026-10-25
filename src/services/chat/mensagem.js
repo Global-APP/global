@@ -1,62 +1,98 @@
-const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
-const Guild = require('../../models/Guild');
-const User = require('../../models/User');
 
 async function infoMensagem(message) {
-  const autor = message.author;
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
-  const g = message.guild || client.guilds.get(guildId);
-  const nomeServidor = g && g.name ? g.name : 'Servidor Desconhecido';
-
-  const nickname = autor.displayName || autor.username;
-  const username = autor.username;
-
-  const [guildConfig, ehStaff] = await Promise.all([
-    Guild.findOne({ guildId }).lean(),
-    User.exists({ userId: String(autor.id), staff: true })
-  ]);
-
-  let authorText = `${nickname} (@${username}#${autor.discriminator})`;
-  let corEmbed = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
-
-  if (autor.id === DONO_ID) {
-    authorText = `${nickname} (@${username}#${autor.discriminator}) - Desenvolvedor do Global`;
-    corEmbed = 0xC0B29D;
-  } else if (autor.id === MUBI_ID) {
-    authorText = `${nickname} (@${username}#${autor.discriminator}) - Desenvolvedor do Global`;
-    corEmbed = COR_EMBED_MUBI;
-  } else if (ehStaff) {
-    authorText = `${nickname} (@${username}#${autor.discriminator}) - Staff`;
-    corEmbed = 0xeb0075;
-  }
-
-  let urlMidia = null;
-  if (message.attachments && message.attachments.size > 0) {
-    urlMidia = message.attachments.first().url;
-  }
-  if (!urlMidia) {
-    const figurinhas = message.stickers;
-    const figurinha = Array.isArray(figurinhas) ? figurinhas[0] : (figurinhas && figurinhas.first ? figurinhas.first() : null);
-    if (figurinha && figurinha.url && !/\.json(\?|$)/i.test(figurinha.url)) {
-      urlMidia = figurinha.url;
-    }
-  }
-
-  return { guildId, nomeServidor, authorText, corEmbed, urlMidia };
+  const guild = message.guild || client.guilds.get(guildId);
+  return {
+    guildId,
+    nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido'
+  };
 }
 
-function montarEmbedGlobal(message, info) {
-  const autor = message.author;
-  const avatarUrl = autor.displayAvatarURL ? autor.displayAvatarURL() : null;
-  const embed = new EmbedBuilder()
-    .setDescription(message.content ? message.content : null)
-    .setColor(info.corEmbed)
-    .setAuthor({ name: info.authorText, iconURL: avatarUrl, url: `https://web.fluxer.app/users/${autor.id}` })
-    .setFooter({ text: info.nomeServidor });
-  if (info.urlMidia) embed.setImage(info.urlMidia);
-  return embed;
+function listar(itens) {
+  if (!itens) return [];
+  if (Array.isArray(itens)) return itens;
+  if (typeof itens.values === 'function') return [...itens.values()];
+  if (typeof itens[Symbol.iterator] === 'function') return [...itens];
+  return [];
 }
 
-module.exports = { infoMensagem, montarEmbedGlobal };
+function nomeDaFigurinha(figurinha, indice) {
+  if (figurinha.name) return figurinha.name;
+  try {
+    const nome = new URL(figurinha.url).pathname.split('/').pop();
+    if (nome && /\.[a-z0-9]{2,5}$/i.test(nome)) return nome;
+  } catch (_) {
+    // Usa o nome genérico abaixo para URL incomum.
+  }
+  return `figurinha-${indice + 1}.png`;
+}
+
+/**
+ * @param {any} message
+ * @param {any} info
+ * @param {any} [replyTarget]
+ * @returns {any}
+ */
+function montarPayloadWebhook(message, info, replyTarget) {
+  const autor = message.author || {};
+  const nome = (message.member && message.member.displayName)
+    || autor.displayName
+    || autor.globalName
+    || autor.username
+    || 'Usuário';
+  const nomeWebhook = autor.username ? `${nome} (@${autor.username})` : nome;
+  const avatarUrl = typeof autor.displayAvatarURL === 'function' ? autor.displayAvatarURL() : null;
+  const files = listar(message.attachments)
+    .filter((anexo) => anexo && anexo.url)
+    .map((anexo, indice) => ({
+      name: anexo.filename || anexo.title || `anexo-${indice + 1}`,
+      url: anexo.url,
+      filename: anexo.filename || anexo.title || `anexo-${indice + 1}`
+    }));
+
+  for (const [indice, figurinha] of listar(message.stickers).entries()) {
+    if (!figurinha || !figurinha.url || /\.json(\?|$)/i.test(figurinha.url)) continue;
+    files.push({
+      name: nomeDaFigurinha(figurinha, indice),
+      url: figurinha.url,
+      filename: nomeDaFigurinha(figurinha, indice)
+    });
+  }
+
+  const texto = message.content || '';
+  const nomeMascarado = String(nome).replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+  const linkUsuario = autor.id
+    ? `[${nomeMascarado}](https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))})`
+    : '';
+  const detalhes = [
+    info && info.nomeServidor ? `Enviado de: ${info.nomeServidor}` : '',
+    linkUsuario
+  ].filter(Boolean).join(' • ');
+  const atribuicao = detalhes ? `-# ${detalhes}` : '';
+  const content = [texto, atribuicao].filter(Boolean).join('\n\n');
+  const payload = {
+    username: nomeWebhook,
+    content,
+    allowedMentions: { parse: [] }
+  };
+
+  if (avatarUrl) payload.avatarUrl = avatarUrl;
+  if (files.length > 0) payload.files = files;
+  if (replyTarget && replyTarget.channelId && replyTarget.messageId) {
+    payload.replyTo = replyTarget;
+    payload.ping = false;
+  }
+
+  return payload;
+}
+
+function montarPayloadEdicao(message) {
+  return {
+    content: message.content || '',
+    embeds: [],
+    allowedMentions: { parse: [] }
+  };
+}
+
+module.exports = { infoMensagem, montarPayloadWebhook, montarPayloadEdicao };

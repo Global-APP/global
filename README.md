@@ -33,11 +33,15 @@ cp .env.example .env
 | -------------- | ----------- | ---------------------------------- |
 | `TOKEN`        | Sim         | nenhum                             |
 | `MONGODB_URI`  | Não         | `mongodb://127.0.0.1:27017/global` |
+| `NSFW_ENABLED` | Não         | `true`                              |
 | `NSFW_URL`     | Não         | `http://localhost:3000`            |
 | `NSFW_API_KEY` | Não         | vazio                              |
 
-> [!IMPORTANT]
-> Sem o serviço NSFW no ar, mídia é bloqueada por padrão. Ajuste `NSFW_URL` ou mantenha o serviço rodando.
+> [!NOTE]
+> Caso deseja usar o serviço para filtragem de mídias NSFW, o mesmo fica localizado em: https://huggingface.co/AdamCodd/vit-base-nsfw-detector
+
+> [!NOTE]
+> Defina `NSFW_ENABLED=false` para desativar a checagem e não precisar de `NSFW_URL`; nesse modo, imagens e vídeos não passam pelo filtro NSFW. Se habilitado, mantenha o serviço no endereço configurado em `NSFW_URL`.
 
 ## Execução
 
