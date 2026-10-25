@@ -1,8 +1,8 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
 const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
-const CorServidor = require('../../models/CorServidor');
-const Staff = require('../../models/Staff');
+const Guild = require('../../models/Guild');
+const User = require('../../models/User');
 
 async function infoMensagem(message) {
   const autor = message.author;
@@ -13,13 +13,13 @@ async function infoMensagem(message) {
   const nickname = autor.displayName || autor.username;
   const username = autor.username;
 
-  const [corServidor, ehStaff] = await Promise.all([
-    CorServidor.findOne({ guildId }).lean(),
-    Staff.exists({ userId: String(autor.id) })
+  const [guildConfig, ehStaff] = await Promise.all([
+    Guild.findOne({ guildId }).lean(),
+    User.exists({ userId: String(autor.id), staff: true })
   ]);
 
   let authorText = `${nickname} (@${username}#${autor.discriminator})`;
-  let corEmbed = corServidor ? corServidor.cor : 0x0B0B0B;
+  let corEmbed = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
 
   if (autor.id === DONO_ID) {
     authorText = `${nickname} (@${username}#${autor.discriminator}) - Desenvolvedor do Global`;

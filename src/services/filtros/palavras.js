@@ -1,20 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const { PASTA_LISTAS } = require('../../config');
-const PalavraProibida = require('../../models/PalavraProibida');
-const PalavraLiberada = require('../../models/PalavraLiberada');
+const Palavra = require('../../models/Palavra');
 const { log } = require('../../util/logger');
 const { limparBase, aplicarLeet, extrairTokens, colapsar1, colapsar2 } = require('./normalizacao');
 
-// Repetições limitadas a 2 letras.
 let palavrasUnicas = new Set();
-
-// Sem nenhuma letra repetida; só palavras com 3+ letras.
 let palavrasColapsadas = new Set();
-
 let frasesProibidas = [];
-
-// Exceções para falsos positivos das listas.
 let palavrasLiberadas = new Set();
 
 function adicionarEntrada(bruta) {
@@ -55,10 +48,9 @@ async function recarregarPalavras() {
 
   const dosArquivos = carregarArquivosDeListas();
 
-  const [proibidas, liberadas] = await Promise.all([
-    PalavraProibida.find().lean(),
-    PalavraLiberada.find().lean()
-  ]);
+  const palavras = await Palavra.find().lean();
+  const proibidas = palavras.filter((p) => p.tipo === 'proibida');
+  const liberadas = palavras.filter((p) => p.tipo === 'liberada');
 
   let doBanco = 0;
   for (const { palavra } of proibidas) if (adicionarEntrada(palavra)) doBanco++;

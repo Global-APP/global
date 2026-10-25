@@ -1,6 +1,5 @@
 const { MAX_FALHAS_CONSECUTIVAS } = require('../config');
-const Canal = require('../models/Canal');
-const ConfigGuild = require('../models/ConfigGuild');
+const Guild = require('../models/Guild');
 const Bloqueio = require('../models/Bloqueio');
 const { log, errMsg } = require('../util/logger');
 
@@ -22,7 +21,7 @@ async function tratarFalhaDestino(guildId, e) {
   falhasConsecutivas.set(gId, n);
   if (n >= MAX_FALHAS_CONSECUTIVAS) {
     try {
-      await Canal.deleteOne({ guildId: gId });
+      await Guild.updateOne({ guildId: gId }, { canalId: null, pausado: false });
       log.warn('LIMPEZA', `Servidor ${gId} removido da conexão global após ${n} falhas seguidas (canal/servidor inexistente).`);
     } catch (err) {
       log.error('LIMPEZA', `Erro ao remover o servidor ${gId}`, err);
@@ -40,26 +39,21 @@ function registrarSucessoDestino(guildId) {
 }
 
 async function listarDestinosAtivos() {
-  const [canais, bloqueados, configs] = await Promise.all([
-    Canal.find({ pausado: false }).lean(),
-    Bloqueio.find({ tipo: 'servidor' }).distinct('id'),
-    ConfigGuild.find().lean()
+  const [guilds, bloqueados] = await Promise.all([
+    Guild.find({ canalId: { $ne: null }, pausado: false }).lean(),
+    Bloqueio.find({ tipo: 'servidor' }).distinct('id')
   ]);
 
   const bloqueadosSet = new Set(bloqueados);
-  const configPorGuild = new Map(configs.map((c) => [c.guildId, c]));
 
-  return canais
-    .filter((c) => !bloqueadosSet.has(c.guildId))
-    .map((c) => {
-      const cfg = configPorGuild.get(c.guildId);
-      return {
-        guildId: c.guildId,
-        canalId: c.canalId,
-        filtrarPalavroes: !!(cfg && cfg.filtrarPalavroes),
-        filtrarLinks: !!(cfg && cfg.filtrarLinks)
-      };
-    });
+  return guilds
+    .filter((g) => !bloqueadosSet.has(g.guildId))
+    .map((g) => ({
+      guildId: g.guildId,
+      canalId: g.canalId,
+      filtrarPalavroes: !!g.filtrarPalavroes,
+      filtrarLinks: !!g.filtrarLinks
+    }));
 }
 
 module.exports = {

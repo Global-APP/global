@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { DONO_ID, MUBI_ID } = require('../../config');
-const Canal = require('../../models/Canal');
+const Guild = require('../../models/Guild');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
 
   async execute(message) {
     const [totalServidores, autores] = await Promise.all([
-      Canal.countDocuments(),
+      Guild.countDocuments({ canalId: { $ne: null } }),
       MensagemGlobal.distinct('autorId')
     ]);
     const ativos = autores.length;

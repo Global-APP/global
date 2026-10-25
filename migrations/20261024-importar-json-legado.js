@@ -1,8 +1,7 @@
 const fs = require('fs');
 const { ARQUIVO_CONFIG, ARQUIVO_ANUNCIO, COR_PADRAO_ANUNCIO } = require('../src/config');
-const Canal = require('../src/models/Canal');
-const Staff = require('../src/models/Staff');
-const CorServidor = require('../src/models/CorServidor');
+const Guild = require('../src/models/Guild');
+const User = require('../src/models/User');
 const Anuncio = require('../src/models/Anuncio');
 const { ehSnowflake } = require('../src/util/ids');
 const { log } = require('../src/util/logger');
@@ -12,33 +11,33 @@ async function importarConfig() {
 
   const json = JSON.parse(fs.readFileSync(ARQUIVO_CONFIG, 'utf-8'));
 
-  const canais = Object.entries(json.canais || {})
-    .filter(([g, c]) => ehSnowflake(String(g)) && ehSnowflake(String(c)))
-    .map(([guildId, canalId]) => ({ guildId: String(guildId), canalId: String(canalId) }));
+  /** @type {Map<string, any>} */
+  const guilds = new Map();
 
-  if (canais.length > 0) {
-    await Canal.bulkWrite(canais.map((c) => ({
-      updateOne: { filter: { guildId: c.guildId }, update: { $set: c }, upsert: true }
+  for (const [guildId, canalId] of Object.entries(json.canais || {})) {
+    if (!ehSnowflake(String(guildId)) || !ehSnowflake(String(canalId))) continue;
+    guilds.set(String(guildId), { guildId: String(guildId), canalId: String(canalId) });
+  }
+
+  for (const [guildId, cor] of Object.entries(json.cores_servidores || {})) {
+    if (!ehSnowflake(String(guildId)) || !Number.isInteger(cor)) continue;
+    const atual = guilds.get(String(guildId)) || { guildId: String(guildId) };
+    guilds.set(String(guildId), { ...atual, cor });
+  }
+
+  if (guilds.size > 0) {
+    await Guild.bulkWrite([...guilds.values()].map((g) => ({
+      updateOne: { filter: { guildId: g.guildId }, update: { $set: g }, upsert: true }
     })), { ordered: false });
   }
 
-  const staffs = (json.staffs || [])
-    .filter((s) => ehSnowflake(String(s)))
-    .map((userId) => ({ userId: String(userId) }));
+  const users = (json.staffs || [])
+    .filter((userId) => ehSnowflake(String(userId)))
+    .map((userId) => ({ userId: String(userId), staff: true }));
 
-  if (staffs.length > 0) {
-    await Staff.bulkWrite(staffs.map((s) => ({
-      updateOne: { filter: { userId: s.userId }, update: { $set: s }, upsert: true }
-    })), { ordered: false });
-  }
-
-  const cores = Object.entries(json.cores_servidores || {})
-    .filter(([g, cor]) => ehSnowflake(String(g)) && Number.isInteger(cor))
-    .map(([guildId, cor]) => ({ guildId: String(guildId), cor }));
-
-  if (cores.length > 0) {
-    await CorServidor.bulkWrite(cores.map((c) => ({
-      updateOne: { filter: { guildId: c.guildId }, update: { $set: c }, upsert: true }
+  if (users.length > 0) {
+    await User.bulkWrite(users.map((u) => ({
+      updateOne: { filter: { userId: u.userId }, update: { $set: u }, upsert: true }
     })), { ordered: false });
   }
 

@@ -1,4 +1,4 @@
-const Canal = require('../../models/Canal');
+const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -19,9 +19,12 @@ module.exports = {
     }
 
     const gId = String(guildId);
-    const r = await Canal.deleteOne({ guildId: gId });
+    const r = await Guild.updateOne(
+      { guildId: gId, canalId: { $ne: null } },
+      { canalId: null, pausado: false, filtrarPalavroes: false, filtrarLinks: false }
+    );
     limparFalhasDestino(gId);
-    if (r.deletedCount > 0) {
+    if (r.matchedCount > 0) {
       log.ok('DESCONECTAR', `Servidor desconectado | ${descreverContexto(message)}`);
       await message.channel.send('<:checkboxcirclefill:1562606683371339777> Este servidor foi desconectado do chat global.\n-# Use g.config no canal desejado para reconectar.');
     } else {

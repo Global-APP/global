@@ -1,5 +1,5 @@
 const { DONO_ID } = require('../../config');
-const Canal = require('../../models/Canal');
+const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -24,8 +24,8 @@ module.exports = {
     }
 
     const gId = String(guildId);
-    const anterior = await Canal.findOne({ guildId: gId }).lean();
-    await Canal.findOneAndUpdate({ guildId: gId }, { canalId: String(message.channel.id) }, { upsert: true });
+    const anterior = await Guild.findOne({ guildId: gId, canalId: { $ne: null } }).lean();
+    await Guild.findOneAndUpdate({ guildId: gId }, { canalId: String(message.channel.id) }, { upsert: true });
     limparFalhasDestino(gId);
     log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canalId} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
 

@@ -1,5 +1,4 @@
-const PalavraProibida = require('../../models/PalavraProibida');
-const PalavraLiberada = require('../../models/PalavraLiberada');
+const Palavra = require('../../models/Palavra');
 const { recarregarPalavras, acharPalavraProibida, totalEntradas } = require('../../services/filtros/palavras');
 const { normalizarTexto } = require('../../services/filtros/normalizacao');
 const { log } = require('../../util/logger');
@@ -22,7 +21,11 @@ module.exports = {
         await message.channel.send('<:closecirclefill:1562606683371339786> A palavra precisa ter entre 2 e 50 caracteres.');
         return;
       }
-      await PalavraProibida.updateOne({ palavra }, { $setOnInsert: { palavra } }, { upsert: true });
+      await Palavra.updateOne(
+        { palavra, tipo: 'proibida' },
+        { $setOnInsert: { palavra, tipo: 'proibida' } },
+        { upsert: true }
+      );
       await recarregarPalavras();
       log.ok('FILTRO', `Palavra adicionada por ${message.author.id}`);
       await message.channel.send('<:checkboxcirclefill:1562606683371339777> Palavra adicionada ao filtro.');
@@ -30,7 +33,7 @@ module.exports = {
     }
 
     if (['remove', 'remover', 'del'].includes(sub) && palavra) {
-      const r = await PalavraProibida.deleteOne({ palavra });
+      const r = await Palavra.deleteOne({ palavra, tipo: 'proibida' });
       await recarregarPalavras();
       await message.channel.send(r.deletedCount > 0
         ? '<:checkboxcirclefill:1562606683371339777> Palavra removida do filtro.'
@@ -40,14 +43,18 @@ module.exports = {
 
     // Exceção para palavras das listas que dão falso positivo
     if (['liberar', 'permitir'].includes(sub) && palavra) {
-      await PalavraLiberada.updateOne({ palavra }, { $setOnInsert: { palavra } }, { upsert: true });
+      await Palavra.updateOne(
+        { palavra, tipo: 'liberada' },
+        { $setOnInsert: { palavra, tipo: 'liberada' } },
+        { upsert: true }
+      );
       await recarregarPalavras();
       await message.channel.send('<:checkboxcirclefill:1562606683371339777> Palavra liberada (não será mais bloqueada).');
       return;
     }
 
     if (['desliberar', 'bloquear'].includes(sub) && palavra) {
-      const r = await PalavraLiberada.deleteOne({ palavra });
+      const r = await Palavra.deleteOne({ palavra, tipo: 'liberada' });
       await recarregarPalavras();
       await message.channel.send(r.deletedCount > 0
         ? '<:checkboxcirclefill:1562606683371339777> Exceção removida.'
@@ -70,12 +77,9 @@ module.exports = {
     }
 
     if (['list', 'lista', 'listar'].includes(sub)) {
-      const [proibidas, liberadas] = await Promise.all([
-        PalavraProibida.find().sort({ palavra: 1 }).lean(),
-        PalavraLiberada.find().sort({ palavra: 1 }).lean()
-      ]);
-      const custom = proibidas.map((p) => p.palavra);
-      const excecoes = liberadas.map((p) => p.palavra);
+      const palavras = await Palavra.find().sort({ palavra: 1 }).lean();
+      const custom = palavras.filter((p) => p.tipo === 'proibida').map((p) => p.palavra);
+      const excecoes = palavras.filter((p) => p.tipo === 'liberada').map((p) => p.palavra);
       let texto = custom.length ? custom.map((p) => `\`${p}\``).join(', ') : '*(nenhuma)*';
       if (texto.length > 1500) texto = texto.slice(0, 1500) + '…';
       await message.channel.send(

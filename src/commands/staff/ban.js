@@ -1,6 +1,6 @@
 const { client } = require('../../lib/client');
 const { DONO_ID, SUPORTE_GUILD_ID } = require('../../config');
-const Staff = require('../../models/Staff');
+const User = require('../../models/User');
 const Bloqueio = require('../../models/Bloqueio');
 const { extrairId } = require('../../util/ids');
 const { log } = require('../../util/logger');
@@ -26,7 +26,7 @@ module.exports = {
         await message.channel.send('<:closecirclefill:1562606683371339786> Você não pode bloquear esse usuário.');
         return;
       }
-      if (message.author.id !== DONO_ID && await Staff.exists({ userId: alvoId })) {
+      if (message.author.id !== DONO_ID && await User.exists({ userId: alvoId, staff: true })) {
         await message.channel.send('<:closecirclefill:1562606683371339786> Somente o desenvolvedor pode bloquear um staff.');
         return;
       }

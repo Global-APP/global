@@ -1,10 +1,10 @@
 const { client } = require('../lib/client');
-const Canal = require('../models/Canal');
+const Guild = require('../models/Guild');
 const { log } = require('../util/logger');
 
 const STATUS_ROTATIVOS = [
   async () => 'Globalmente conversando',
-  async () => `Estou em ${await Canal.countDocuments()} comunidades`,
+  async () => `Estou em ${await Guild.countDocuments({ canalId: { $ne: null } })} comunidades`,
   async () => 'Alguma dúvida? Me mencione :D',
   async () => 'Alguém realmente lê isso?'
 ];
