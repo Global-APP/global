@@ -1,5 +1,6 @@
 const { client } = require('../../lib/client');
-const { EMOJI_BLOQUEIO, COOLDOWN_TEMPO } = require('../../config');
+const { COOLDOWN_TEMPO } = require('../../config');
+const { emojis } = require('../../util/emojis');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { contarMensagemParaAnuncio } = require('../anuncio');
 const { tratarFalhaDestino, registrarSucessoDestino, listarDestinosAtivos } = require('../destinos');
@@ -22,7 +23,7 @@ async function retransmitirMensagemGlobal(message) {
   const bloqueado = (await estaBloqueado('usuario', autor.id)) || (await estaBloqueado('servidor', guildIdOrigem));
   if (bloqueado) {
     log.warn('BAN', `Mensagem bloqueada de ${descreverContexto(message)}`);
-    await reagir(message, EMOJI_BLOQUEIO);
+    await reagir(message, [emojis.error]);
     return;
   }
 
@@ -44,7 +45,7 @@ async function retransmitirMensagemGlobal(message) {
       const tempoRestante = ((COOLDOWN_TEMPO - tempoDecorrido) / 1000).toFixed(1);
       log.warn('COOLDOWN', `${descreverContexto(message)} bloqueado (${tempoRestante}s restantes)`);
       try {
-        await reagir(message, EMOJI_BLOQUEIO);
+        await reagir(message, [emojis.error]);
         const msgAviso = await message.channel.send(`<:forbidline:1562606683371339778> ${autor}, calma. Aguarde **${tempoRestante}s** para enviar outra mensagem.`);
         setTimeout(() => msgAviso.delete().catch(() => {}), 4000);
       } catch (e) {

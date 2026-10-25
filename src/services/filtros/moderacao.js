@@ -1,4 +1,4 @@
-const { EMOJI_BLOQUEIO } = require('../../config');
+const { emojis } = require('../../util/emojis');
 const Guild = require('../../models/Guild');
 const { log, descreverContexto } = require('../../util/logger');
 const { reagir } = require('../../util/reacoes');
@@ -28,7 +28,7 @@ function motivoFiltroGuild(analise, cfg) {
 async function bloquearPorFiltro(message, motivo) {
   log.warn('FILTRO', `${descreverContexto(message)} | ${motivo}`);
   const apagou = await message.delete().then(() => true).catch(() => false);
-  if (!apagou) await reagir(message, EMOJI_BLOQUEIO);
+  if (!apagou) await reagir(message, [emojis.error]);
   try {
     const aviso = await message.channel.send(`<:forbidline:1562606683371339778> ${message.author}, sua mensagem não foi enviada: **${motivo}**.`);
     setTimeout(() => aviso.delete().catch(() => {}), 6000);
