@@ -1,5 +1,5 @@
 const { client } = require('../../lib/client');
-const Canal = require('../../models/Canal');
+const Guild = require('../../models/Guild');
 const Bloqueio = require('../../models/Bloqueio');
 const { negarSeNaoStaff } = require('./_comum');
 
@@ -12,7 +12,7 @@ module.exports = {
     if (await negarSeNaoStaff(message)) return;
 
     const [lista, bloqueados] = await Promise.all([
-      Canal.find().lean(),
+      Guild.find({ canalId: { $ne: null } }).lean(),
       Bloqueio.find({ tipo: 'servidor' }).distinct('id')
     ]);
 

@@ -1,5 +1,5 @@
 const { DONO_ID } = require('../../config');
-const Staff = require('../../models/Staff');
+const User = require('../../models/User');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 
@@ -27,7 +27,7 @@ module.exports = {
       return;
     }
 
-    await Staff.findOneAndUpdate({ userId: String(alvoId) }, { userId: String(alvoId) }, { upsert: true });
+    await User.findOneAndUpdate({ userId: String(alvoId) }, { staff: true }, { upsert: true });
     log.ok('UP', `Usuário ${alvoId} promovido a Staff`);
 
     await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Usuário <@${alvoId}> foi promovido a **Staff**.`);

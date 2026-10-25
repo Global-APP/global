@@ -1,5 +1,5 @@
 const { DONO_ID } = require('../../config');
-const Staff = require('../../models/Staff');
+const User = require('../../models/User');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 
@@ -27,8 +27,8 @@ module.exports = {
       return;
     }
 
-    const r = await Staff.deleteOne({ userId: String(alvoId) });
-    if (r.deletedCount > 0) {
+    const r = await User.findOneAndUpdate({ userId: String(alvoId), staff: true }, { staff: false });
+    if (r) {
       log.ok('DOWN', `Staff removido: ${alvoId}`);
       await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Status de Staff removido de <@${alvoId}>.`);
     } else {

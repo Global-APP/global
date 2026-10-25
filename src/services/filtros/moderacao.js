@@ -1,18 +1,17 @@
 const { EMOJI_BLOQUEIO } = require('../../config');
-const ConfigGuild = require('../../models/ConfigGuild');
+const Guild = require('../../models/Guild');
 const { log, descreverContexto } = require('../../util/logger');
 const { reagir } = require('../../util/reacoes');
 const { temLink } = require('./links');
 const { acharPalavraProibida } = require('./palavras');
 
-// O texto é analisado uma vez; cada servidor decide depois se bloqueia.
 function analisarConteudo(texto) {
   if (!texto) return { palavra: null, link: false };
   return { palavra: acharPalavraProibida(texto), link: temLink(texto) };
 }
 
 async function configDaGuild(guildId) {
-  const row = await ConfigGuild.findOne({ guildId: String(guildId) }).lean();
+  const row = await Guild.findOne({ guildId: String(guildId) }).lean();
   return {
     filtrarPalavroes: !!(row && row.filtrarPalavroes),
     filtrarLinks: !!(row && row.filtrarLinks)

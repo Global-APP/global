@@ -1,9 +1,8 @@
 const { Events } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
 const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS } = require('../config');
-const Canal = require('../models/Canal');
-const ConfigGuild = require('../models/ConfigGuild');
-const Staff = require('../models/Staff');
+const Guild = require('../models/Guild');
+const User = require('../models/User');
 const { limparFalhasDestino } = require('../services/destinos');
 const { ehMensagemOriginal, sincronizarEdicao, apagarCopiasDoGrupo } = require('../services/chat/sincronizacao');
 const { retransmitirMensagemGlobal } = require('../services/chat/retransmissao');
@@ -14,7 +13,10 @@ const { iniciarStatusRotativo } = require('../services/status');
 
 function registrarEventos() {
   client.on(Events.Ready, async () => {
-    const [canais, staffs] = await Promise.all([Canal.countDocuments(), Staff.countDocuments()]);
+    const [canais, staffs] = await Promise.all([
+      Guild.countDocuments({ canalId: { $ne: null } }),
+      User.countDocuments({ staff: true })
+    ]);
     log.ok('BOT', `Conectado como ${client.user.username} (${client.user.id}) | ${canais} servidor(es) conectado(s) | ${staffs} staff(s)`);
     iniciarStatusRotativo();
   });
@@ -22,9 +24,11 @@ function registrarEventos() {
   client.on(Events.GuildDelete, async (guild) => {
     try {
       const guildId = String(guild.id);
-      const r = await Canal.deleteOne({ guildId });
-      await ConfigGuild.deleteOne({ guildId });
-      if (r.deletedCount > 0) {
+      const r = await Guild.updateOne(
+        { guildId, canalId: { $ne: null } },
+        { canalId: null, pausado: false, filtrarPalavroes: false, filtrarLinks: false }
+      );
+      if (r.matchedCount > 0) {
         limparFalhasDestino(guildId);
         log.warn('LIMPEZA', `Bot saiu/servidor deletado (${guildId}); conexão global removida.`);
       }
@@ -49,7 +53,7 @@ function registrarEventos() {
 
       const guildId = idDoServidor(message);
       if (guildId) {
-        const row = await Canal.findOne({ guildId: String(guildId) }).lean();
+        const row = await Guild.findOne({ guildId: String(guildId) }).lean();
         if (row && message.channel.id === row.canalId) {
           if (row.pausado) return;
           await retransmitirMensagemGlobal(message);

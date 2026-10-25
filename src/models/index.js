@@ -1,11 +1,8 @@
 module.exports = {
-  Canal: require('./Canal'),
-  Staff: require('./Staff'),
-  CorServidor: require('./CorServidor'),
-  ConfigGuild: require('./ConfigGuild'),
+  Guild: require('./Guild'),
+  User: require('./User'),
   Bloqueio: require('./Bloqueio'),
-  PalavraProibida: require('./PalavraProibida'),
-  PalavraLiberada: require('./PalavraLiberada'),
+  Palavra: require('./Palavra'),
   MensagemGlobal: require('./MensagemGlobal'),
   Anuncio: require('./Anuncio'),
   Migracao: require('./Migracao')

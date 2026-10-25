@@ -1,5 +1,5 @@
 const { DONO_ID } = require('../../config');
-const CorServidor = require('../../models/CorServidor');
+const Guild = require('../../models/Guild');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 
@@ -34,7 +34,7 @@ module.exports = {
     }
 
     const corInt = parseInt(hexStr, 16);
-    await CorServidor.findOneAndUpdate({ guildId: targetGuildId }, { cor: corInt }, { upsert: true });
+    await Guild.findOneAndUpdate({ guildId: targetGuildId }, { cor: corInt }, { upsert: true });
     log.ok('SERVERCOLOR', `Cor do servidor ${targetGuildId} -> #${hexStr}`);
 
     await message.channel.send(`<:brushaifill:1562606683371339785> Cor padrão do servidor \`${targetGuildId}\` atualizada para \`#${hexStr}\` com sucesso.`);

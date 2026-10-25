@@ -1,5 +1,5 @@
 const { configDaGuild } = require('../../services/filtros/moderacao');
-const ConfigGuild = require('../../models/ConfigGuild');
+const Guild = require('../../models/Guild');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { temPermissaoConfig } = require('../../services/permissoes');
@@ -42,9 +42,9 @@ module.exports = {
     }
 
     if (alvo === 'palavroes') {
-      await ConfigGuild.findOneAndUpdate({ guildId: gId }, { filtrarPalavroes: ligar }, { upsert: true, setDefaultsOnInsert: true });
+      await Guild.findOneAndUpdate({ guildId: gId }, { filtrarPalavroes: ligar }, { upsert: true, setDefaultsOnInsert: true });
     } else {
-      await ConfigGuild.findOneAndUpdate({ guildId: gId }, { filtrarLinks: ligar }, { upsert: true, setDefaultsOnInsert: true });
+      await Guild.findOneAndUpdate({ guildId: gId }, { filtrarLinks: ligar }, { upsert: true, setDefaultsOnInsert: true });
     }
 
     log.ok('AUTOMOD', `${alvo} ${ligar ? 'filtrado' : 'liberado'} | ${descreverContexto(message)}`);
