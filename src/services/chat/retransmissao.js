@@ -9,6 +9,7 @@ const { verificarSpam } = require('../filtros/spam');
 const { log, errMsg, descreverContexto } = require('../../util/logger');
 const { ehStaffOuDono, estaBloqueado } = require('../permissoes');
 const { reagir } = require('../../util/reacoes');
+const { reagirPorFalhaEnvio } = require('./falha');
 const { obterWebhook } = require('../webhooks');
 const { infoMensagem, montarPayloadWebhook } = require('./mensagem');
 const { resolverAlvoReply, enviarComReplyOuFallback } = require('./reply');
@@ -162,6 +163,7 @@ async function retransmitirMensagemGlobal(message) {
   if (falhas.length > 0) {
     log.warn('GLOBAL', `${falhas.length} falha(s) na retransmissão da msg ${message.id}`, falhas.join('\n'));
   }
+  await reagirPorFalhaEnvio(message, falhas, reagir);
 
   await contarMensagemParaAnuncio();
 }
