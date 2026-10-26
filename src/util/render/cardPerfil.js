@@ -254,9 +254,10 @@ function desenharCardStat(ctx, x, y, w, h, rotulo, valor, detalhe) {
 
   ctx.fillStyle = COR.texto;
   const larguraMax = w - 36 - 20;
-  ajustarFonte(ctx, valor, FONTE_NEGRITO, 27, 16, larguraMax);
-  ctx.fillText(cortarTexto(ctx, valor, larguraMax), tx, y + 55);
+  const tamanho = ajustarFonte(ctx, valor, FONTE_NEGRITO, 27, 16, larguraMax);
+  ctx.fillText(cortarTexto(ctx, valor, larguraMax), tx, y + 45.5 + tamanho * 0.35);
 }
+
 async function gerarCardPerfil(dados) {
   const {
     username,
@@ -353,7 +354,7 @@ async function gerarCardPerfil(dados) {
   const tileW = (LARGURA - margem * 2 - gap * 2) / 3;
   const stats = [
     ['Mensagens', formatarNumero(mensagens), null],
-    ['Conta criada', formatarData(contaCriada), null],
+    ['Começou em', formatarData(contaCriada), null],
     [
       'Servidor mais ativo',
       servidor,
