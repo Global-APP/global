@@ -6,7 +6,31 @@ const MUBI_ID = '1561698550566363137';
 
 const COR_EMBED_MUBI = 0xeb0075;
 
+const COR_BADGE = {
+  staff: 0xeb0075,
+  developer: 0x4facfe,
+  partner: 0xf9a11b,
+  verified: 0x3b9bf5,
+  active: 0x4ade5f
+};
+
+const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'verified', 'active'];
+
+const ROTULO_BADGE = {
+  active: 'Conversador',
+  developer: 'Desenvolvedor',
+  partner: 'Parceiro',
+  staff: 'Staff',
+  verified: 'Verificado'
+};
+
+const CONVERSADOR_MENSAGENS = 100;
+
+const CONVERSADOR_JANELA_MS = 3 * 24 * 60 * 60 * 1000;
+
 const COOLDOWN_TEMPO = 1000;
+
+const COOLDOWN_PERFIL = 5_000;
 
 const SUPORTE_GUILD_ID = '1561937517035388928';
 
@@ -56,7 +80,13 @@ module.exports = {
   DONO_ID,
   MUBI_ID,
   COR_EMBED_MUBI,
+  COR_BADGE,
+  PRIORIDADE_BADGES,
+  ROTULO_BADGE,
+  CONVERSADOR_MENSAGENS,
+  CONVERSADOR_JANELA_MS,
   COOLDOWN_TEMPO,
+  COOLDOWN_PERFIL,
   SUPORTE_GUILD_ID,
   SUPORTE_CANAL_BOAS_VINDAS,
   PASTA_LOGS,
