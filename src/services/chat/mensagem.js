@@ -33,7 +33,6 @@ async function infoMensagem(message) {
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
   const g = message.guild || client.guilds.get(guildId);
   const nomeServidor = g && g.name ? g.name : 'Servidor Desconhecido';
-  const iconeServidor = obterIconeServidor(g);
 
   const nickname = autor.displayName || autor.username;
   const username = autor.username;
@@ -42,6 +41,9 @@ async function infoMensagem(message) {
     Guild.findOne({ guildId }).lean(),
     User.exists({ userId: String(autor.id), staff: true })
   ]);
+
+  const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
+  const iconeServidor = mostrarIcone ? obterIconeServidor(g) : null;
 
   let authorText = `${nickname} (@${username}#${autor.discriminator})`;
   let corEmbed = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
