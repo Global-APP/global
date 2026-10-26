@@ -7,7 +7,8 @@ const guildSchema = new Schema(
     pausado: { type: Boolean, default: false },
     filtrarPalavroes: { type: Boolean, default: false },
     filtrarLinks: { type: Boolean, default: false },
-    cor: { type: Number, default: null }
+    cor: { type: Number, default: null },
+    mostrarIcone: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
