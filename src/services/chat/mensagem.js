@@ -4,6 +4,30 @@ const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
 const Guild = require('../../models/Guild');
 const User = require('../../models/User');
 
+function obterIconeServidor(g) {
+  if (!g) return null;
+
+  if (typeof g.iconURL === 'function') {
+    try {
+      const url = g.iconURL({ extension: 'gif', forceStatic: false, size: 128 }) || g.iconURL();
+      if (url) return url;
+    } catch (_) {
+      try {
+        const url = g.iconURL();
+        if (url) return url;
+      } catch (_) {}
+    }
+  }
+
+  if (g.icon) {
+    const animado = String(g.icon).startsWith('a_');
+    const ext = animado ? 'gif' : 'png';
+    return `https://fluxerusercontent.com/icons/${g.id}/${g.icon}.${ext}?size=128`;
+  }
+
+  return null;
+}
+
 async function infoMensagem(message) {
   const autor = message.author;
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
@@ -17,6 +41,9 @@ async function infoMensagem(message) {
     Guild.findOne({ guildId }).lean(),
     User.exists({ userId: String(autor.id), staff: true })
   ]);
+
+  const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
+  const iconeServidor = mostrarIcone ? obterIconeServidor(g) : null;
 
   let authorText = `${nickname} (@${username}#${autor.discriminator})`;
   let corEmbed = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
@@ -44,17 +71,21 @@ async function infoMensagem(message) {
     }
   }
 
-  return { guildId, nomeServidor, authorText, corEmbed, urlMidia };
+  return { guildId, nomeServidor, iconeServidor, authorText, corEmbed, urlMidia };
 }
 
 function montarEmbedGlobal(message, info) {
   const autor = message.author;
   const avatarUrl = autor.displayAvatarURL ? autor.displayAvatarURL() : null;
+
+  const footer = { text: info.nomeServidor };
+  if (info.iconeServidor) footer.iconURL = info.iconeServidor;
+
   const embed = new EmbedBuilder()
     .setDescription(message.content ? message.content : null)
     .setColor(info.corEmbed)
     .setAuthor({ name: info.authorText, iconURL: avatarUrl, url: `https://web.fluxer.app/users/${autor.id}` })
-    .setFooter({ text: info.nomeServidor });
+    .setFooter(footer);
   if (info.urlMidia) embed.setImage(info.urlMidia);
   return embed;
 }
