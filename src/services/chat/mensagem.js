@@ -4,11 +4,36 @@ const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
 const Guild = require('../../models/Guild');
 const User = require('../../models/User');
 
+function obterIconeServidor(g) {
+  if (!g) return null;
+
+  if (typeof g.iconURL === 'function') {
+    try {
+      const url = g.iconURL({ extension: 'gif', forceStatic: false, size: 128 }) || g.iconURL();
+      if (url) return url;
+    } catch (_) {
+      try {
+        const url = g.iconURL();
+        if (url) return url;
+      } catch (_) {}
+    }
+  }
+
+  if (g.icon) {
+    const animado = String(g.icon).startsWith('a_');
+    const ext = animado ? 'gif' : 'png';
+    return `https://fluxerusercontent.com/icons/${g.id}/${g.icon}.${ext}?size=128`;
+  }
+
+  return null;
+}
+
 async function infoMensagem(message) {
   const autor = message.author;
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
   const g = message.guild || client.guilds.get(guildId);
   const nomeServidor = g && g.name ? g.name : 'Servidor Desconhecido';
+  const iconeServidor = obterIconeServidor(g);
 
   const nickname = autor.displayName || autor.username;
   const username = autor.username;
@@ -44,17 +69,21 @@ async function infoMensagem(message) {
     }
   }
 
-  return { guildId, nomeServidor, authorText, corEmbed, urlMidia };
+  return { guildId, nomeServidor, iconeServidor, authorText, corEmbed, urlMidia };
 }
 
 function montarEmbedGlobal(message, info) {
   const autor = message.author;
   const avatarUrl = autor.displayAvatarURL ? autor.displayAvatarURL() : null;
+
+  const footer = { text: info.nomeServidor };
+  if (info.iconeServidor) footer.iconURL = info.iconeServidor;
+
   const embed = new EmbedBuilder()
     .setDescription(message.content ? message.content : null)
     .setColor(info.corEmbed)
     .setAuthor({ name: info.authorText, iconURL: avatarUrl, url: `https://web.fluxer.app/users/${autor.id}` })
-    .setFooter({ text: info.nomeServidor });
+    .setFooter(footer);
   if (info.urlMidia) embed.setImage(info.urlMidia);
   return embed;
 }
