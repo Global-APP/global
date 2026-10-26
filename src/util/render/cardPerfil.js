@@ -14,7 +14,7 @@ const COR = {
   borda: 'rgba(255,255,255,0.07)'
 };
 
-const ASSETS = path.join(__dirname, '..', 'assets');
+const ASSETS = path.join(__dirname, '..', '..', 'assets');
 const ICONE_PATH = path.join(ASSETS, 'global-icon.png');
 
 GlobalFonts.registerFromPath(path.join(ASSETS, 'fonts', 'Outfit-Regular.ttf'), 'GlobalRegular');
