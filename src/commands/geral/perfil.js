@@ -32,14 +32,14 @@ module.exports = {
   async execute(message, args) {
     const ultimo = cooldownPerfil.get(message.author.id);
     if (ultimo && Date.now() - ultimo < COOLDOWN_PERFIL) {
-      await message.channel.send('<:forbidline:1562606683371339778> Aguarde um pouco antes de pedir outro perfil.');
+      await message.reply('<:forbidline:1562606683371339778> Aguarde um pouco antes de pedir outro perfil.');
       return;
     }
     cooldownPerfil.set(message.author.id, Date.now());
 
     const alvo = await resolverAlvo(message, args);
     if (!alvo) {
-      await message.channel.send(`${emojis.error} Não encontrei esse usuário.`);
+      await message.reply(`${emojis.error} Não encontrei esse usuário.`);
       return;
     }
 
@@ -66,10 +66,10 @@ module.exports = {
         servidorMensagens: topo ? topo.total : null
       });
 
-      await message.channel.send({ files: [{ name: `perfil-${alvo.id}.png`, data: card }] });
+      await message.reply({ files: [{ name: `perfil-${alvo.id}.png`, data: card }] });
     } catch (e) {
       log.error('PERFIL', `Falha ao gerar o perfil de ${alvo.id}`, e);
-      await message.channel.send(`${emojis.error} Não consegui gerar o perfil agora.`);
+      await message.reply(`${emojis.error} Não consegui gerar o perfil agora.`);
     }
   }
 };

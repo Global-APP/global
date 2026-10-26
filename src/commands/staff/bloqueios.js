@@ -11,7 +11,7 @@ module.exports = {
 
     const lista = await Bloqueio.find().sort({ criadoEm: -1 }).lean();
     if (lista.length === 0) {
-      await message.channel.send('<:information2fill:1562606683371339784> Nenhum usuário ou servidor bloqueado.');
+      await message.reply('<:information2fill:1562606683371339784> Nenhum usuário ou servidor bloqueado.');
       return;
     }
 
@@ -20,6 +20,6 @@ module.exports = {
       .join('\n');
     if (texto.length > 1900) texto = texto.slice(0, 1900) + '\n…';
 
-    await message.channel.send(`<:information2fill:1562606683371339784> **Bloqueados (${lista.length})**\n${texto}`);
+    await message.reply(`<:information2fill:1562606683371339784> **Bloqueados (${lista.length})**\n${texto}`);
   }
 };

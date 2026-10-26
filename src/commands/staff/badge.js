@@ -32,14 +32,14 @@ module.exports = {
     const acao = acaoDe(args[0]);
     const alvoId = extrairId(args[1]);
     if (!acao || !alvoId) {
-      await message.channel.send(USO);
+      await message.reply(USO);
       return;
     }
 
     if (acao === 'list') {
       const usuario = await User.findOne({ userId: alvoId }).lean();
       const lista = badgesDoUsuario(usuario);
-      await message.channel.send(
+      await message.reply(
         lista.length
           ? `<:information2fill:1562606683371339784> Badges de <@${alvoId}>:\n${lista.map((b) => `• ${formatar(b)}`).join('\n')}`
           : `<:information2fill:1562606683371339784> <@${alvoId}> não possui badges.`
@@ -49,30 +49,30 @@ module.exports = {
 
     const badge = resolverBadge(args[2]);
     if (!badge) {
-      await message.channel.send(USO);
+      await message.reply(USO);
       return;
     }
     if (badge === 'staff') {
-      await message.channel.send(SEM_PERMISSAO_STAFF);
+      await message.reply(SEM_PERMISSAO_STAFF);
       return;
     }
 
     if (acao === 'add') {
       await concederBadge(alvoId, badge);
       log.ok('BADGE', `${badge} concedida a ${alvoId} por ${message.author.id}`);
-      await message.channel.send(`<:checkboxcirclefill:1562606683371339777> <@${alvoId}> recebeu a badge **${formatar(badge)}**.`);
+      await message.reply(`<:checkboxcirclefill:1562606683371339777> <@${alvoId}> recebeu a badge **${formatar(badge)}**.`);
       return;
     }
 
     const usuario = await User.findOne({ userId: alvoId }).lean();
     if (!badgesDoUsuario(usuario).includes(badge)) {
-      await message.channel.send(`<:closecirclefill:1562606683371339786> <@${alvoId}> não possui a badge **${formatar(badge)}**.`);
+      await message.reply(`<:closecirclefill:1562606683371339786> <@${alvoId}> não possui a badge **${formatar(badge)}**.`);
       return;
     }
 
     await removerBadge(alvoId, badge);
     if (badge === 'active') esquecerConversador(alvoId);
     log.ok('BADGE', `${badge} removida de ${alvoId} por ${message.author.id}`);
-    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> A badge **${formatar(badge)}** foi removida de <@${alvoId}>.`);
+    await message.reply(`<:checkboxcirclefill:1562606683371339777> A badge **${formatar(badge)}** foi removida de <@${alvoId}>.`);
   }
 };

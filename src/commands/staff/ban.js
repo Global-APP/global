@@ -17,21 +17,21 @@ module.exports = {
     const tipo = tipoBloqueio(args[0]);
     const alvoId = extrairId(args[1]);
     if (!tipo || !alvoId) {
-      await message.channel.send('<:information2fill:1562606683371339784> Uso correto: `g.ban usuario <@usuario|ID> [motivo]` ou `g.ban servidor <ID> [motivo]`');
+      await message.reply('<:information2fill:1562606683371339784> Uso correto: `g.ban usuario <@usuario|ID> [motivo]` ou `g.ban servidor <ID> [motivo]`');
       return;
     }
 
     if (tipo === 'usuario') {
       if (alvoId === DONO_ID || alvoId === client.user.id || alvoId === String(message.author.id)) {
-        await message.channel.send('<:closecirclefill:1562606683371339786> Você não pode bloquear esse usuário.');
+        await message.reply('<:closecirclefill:1562606683371339786> Você não pode bloquear esse usuário.');
         return;
       }
       if (message.author.id !== DONO_ID && await User.exists({ userId: alvoId, staff: true })) {
-        await message.channel.send('<:closecirclefill:1562606683371339786> Somente o desenvolvedor pode bloquear um staff.');
+        await message.reply('<:closecirclefill:1562606683371339786> Somente o desenvolvedor pode bloquear um staff.');
         return;
       }
     } else if (alvoId === SUPORTE_GUILD_ID) {
-      await message.channel.send('<:closecirclefill:1562606683371339786> Você não pode bloquear o servidor de suporte.');
+      await message.reply('<:closecirclefill:1562606683371339786> Você não pode bloquear o servidor de suporte.');
       return;
     }
 
@@ -43,7 +43,7 @@ module.exports = {
     );
     log.ok('BAN', `${tipo} ${alvoId} bloqueado por ${message.author.id}${motivo ? ` | ${motivo}` : ''}`);
 
-    await message.channel.send(
+    await message.reply(
       `<:checkboxcirclefill:1562606683371339777> ${tipo === 'usuario' ? `Usuário <@${alvoId}>` : `Servidor \`${alvoId}\``} foi **bloqueado** do chat global.` +
       (motivo ? `\n-# Motivo: ${motivo}` : '')
     );

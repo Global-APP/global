@@ -21,7 +21,7 @@ module.exports = {
       const temPermissao = await membroPodeGerenciarCanais(message);
       if (!temPermissao) {
         log.warn('CONFIG', `Permissão negada para ${descreverContexto(message)}`);
-        await message.channel.send('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
+        await message.reply('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
         return;
       }
     }
@@ -34,7 +34,7 @@ module.exports = {
     }
 
     if (sub) {
-      await message.channel.send(
+      await message.reply(
         '<:closecirclefill:1562606683371339786> Subcomando inválido.\n' +
         '-# Use `g.config` para definir o canal ou `g.config servericon [on|off]` para o ícone do servidor.'
       );
@@ -50,7 +50,7 @@ module.exports = {
     limparFalhasDestino(gId);
     log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canalId} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
 
-    await message.channel.send(
+    await message.reply(
       `<:checkboxcirclefill:1562606683371339777> O canal <#${message.channel.id}> foi definido com sucesso como a \`Conexão Global\`.\n` +
       '-# Execute g.config no canal que **você quer definir** a conexão global.'
     );
@@ -69,7 +69,7 @@ module.exports = {
     } else if (!o) {
       novo = !estavaLigado;
     } else {
-      await message.channel.send(
+      await message.reply(
         '<:closecirclefill:1562606683371339786> Opção inválida.\n' +
         '-# Use `g.config servericon on`, `g.config servericon off` ou só `g.config servericon` para alternar.'
       );
@@ -79,7 +79,7 @@ module.exports = {
     await Guild.findOneAndUpdate({ guildId: gId }, { $set: { mostrarIcone: novo } }, { upsert: true });
     log.ok('CONFIG', `servericon ${novo ? 'ativado' : 'desativado'} | ${descreverContexto(message)}`);
 
-    await message.channel.send(
+    await message.reply(
       novo
         ? '<:checkboxcirclefill:1562606683371339777> O ícone do servidor agora **aparece** nas mensagens do Global.'
         : '<:checkboxcirclefill:1562606683371339777> O ícone do servidor agora **não aparece** mais nas mensagens do Global.'

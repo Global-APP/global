@@ -52,9 +52,9 @@ module.exports = {
         .setColor(0x0330EF)
         .addFields(...comandos.map((c) => ({ name: `${c.emoji} ${c.nome}`, value: c.valor, inline: true })));
 
-      await message.channel.send({ embeds: [embedAjuda] });
+      await message.reply({ embeds: [embedAjuda] });
     } catch (e) {
-      await message.channel.send(
+      await message.reply(
         '<:information2fill:1562606683371339784> **Comandos do Global**\n\n' +
         comandos.map((c) => `• \`${c.nome}\` — ${c.valor}`).join('\n')
       );

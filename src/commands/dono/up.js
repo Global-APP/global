@@ -11,7 +11,7 @@ module.exports = {
   async execute(message, args) {
     if (message.author.id !== DONO_ID) {
       log.warn('UP', `Acesso negado para ${descreverContexto(message)}`);
-      await message.channel.send('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
+      await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
     }
 
@@ -23,13 +23,13 @@ module.exports = {
     }
 
     if (!alvoId) {
-      await message.channel.send('<:information2fill:1562606683371339784> Uso correto: `g.up @usuario` ou `g.up ID`');
+      await message.reply('<:information2fill:1562606683371339784> Uso correto: `g.up @usuario` ou `g.up ID`');
       return;
     }
 
     await User.findOneAndUpdate({ userId: String(alvoId) }, { staff: true }, { upsert: true });
     log.ok('UP', `Usuário ${alvoId} promovido a Staff`);
 
-    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Usuário <@${alvoId}> foi promovido a **Staff**.`);
+    await message.reply(`<:checkboxcirclefill:1562606683371339777> Usuário <@${alvoId}> foi promovido a **Staff**.`);
   }
 };

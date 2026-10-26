@@ -20,7 +20,7 @@ module.exports = {
   async execute(message) {
     if (message.author.id !== DONO_ID) {
       log.warn('ANUNCIO', `Acesso negado para ${descreverContexto(message)}`);
-      await message.channel.send('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
+      await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
     }
 
@@ -30,12 +30,12 @@ module.exports = {
     if (tokens.length === 1 && ['parar', 'off', 'desativar'].includes(tokens[0].toLowerCase())) {
       await desativarAnuncio();
       log.ok('ANUNCIO', 'Anúncio automático desativado');
-      await message.channel.send('<:checkboxcirclefill:1562606683371339777> Anúncio automático desativado.');
+      await message.reply('<:checkboxcirclefill:1562606683371339777> Anúncio automático desativado.');
       return;
     }
 
     if (tokens.length !== 6) {
-      await message.channel.send(
+      await message.reply(
         '<:information2fill:1562606683371339784> **Uso do anúncio**\n' +
         '`g.anuncio "título" "descrição" #hex "autor" "footer" <mensagens>`\n\n' +
         '• Use `#` sozinho em qualquer campo pra deixá-lo vazio (no hex, usa a cor padrão `#0330ef`).\n' +
@@ -57,7 +57,7 @@ module.exports = {
     const footer = limpar(footerRaw);
 
     if (!titulo && !descricao && !autor && !footer) {
-      await message.channel.send('<:closecirclefill:1562606683371339786> O anúncio precisa ter pelo menos um texto (título, descrição, autor ou footer).');
+      await message.reply('<:closecirclefill:1562606683371339786> O anúncio precisa ter pelo menos um texto (título, descrição, autor ou footer).');
       return;
     }
 
@@ -65,7 +65,7 @@ module.exports = {
     if (hexRaw.trim() !== '#') {
       const hexStr = hexRaw.trim().replace('#', '');
       if (!/^[0-9a-fA-F]{6}$/.test(hexStr)) {
-        await message.channel.send('<:closecirclefill:1562606683371339786> Código HEX inválido. Use 6 dígitos (ex: `#2d8f31`) ou `#` pra cor padrão.');
+        await message.reply('<:closecirclefill:1562606683371339786> Código HEX inválido. Use 6 dígitos (ex: `#2d8f31`) ou `#` pra cor padrão.');
         return;
       }
       cor = parseInt(hexStr, 16);
@@ -75,7 +75,7 @@ module.exports = {
     const imediato = duracaoRaw.trim() === '#';
     if (!imediato) {
       if (!/^\d+$/.test(duracaoRaw.trim()) || parseInt(duracaoRaw.trim(), 10) < 1) {
-        await message.channel.send('<:closecirclefill:1562606683371339786> A quantidade de mensagens precisa ser um número maior que 0, ou `#` pra enviar agora.');
+        await message.reply('<:closecirclefill:1562606683371339786> A quantidade de mensagens precisa ser um número maior que 0, ou `#` pra enviar agora.');
         return;
       }
       intervalo = parseInt(duracaoRaw.trim(), 10);
@@ -85,12 +85,12 @@ module.exports = {
 
     if (imediato) {
       const enviados = await enviarAnuncioParaTodos(anuncio);
-      await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Anúncio enviado agora para **${enviados}** servidor(es).`);
+      await message.reply(`<:checkboxcirclefill:1562606683371339777> Anúncio enviado agora para **${enviados}** servidor(es).`);
       return;
     }
 
     await agendarAnuncio(anuncio, intervalo);
     log.ok('ANUNCIO', `Anúncio automático salvo (a cada ${intervalo} mensagens)`);
-    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Anúncio salvo! Ele será enviado **a cada ${intervalo} mensagens** do chat global.\n-# Use g.anuncio parar para desativar.`);
+    await message.reply(`<:checkboxcirclefill:1562606683371339777> Anúncio salvo! Ele será enviado **a cada ${intervalo} mensagens** do chat global.\n-# Use g.anuncio parar para desativar.`);
   }
 };

@@ -11,7 +11,7 @@ module.exports = {
   async execute(message, args) {
     if (message.author.id !== DONO_ID) {
       log.warn('DOWN', `Acesso negado para ${descreverContexto(message)}`);
-      await message.channel.send('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
+      await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
     }
 
@@ -23,16 +23,16 @@ module.exports = {
     }
 
     if (!alvoId) {
-      await message.channel.send('<:information2fill:1562606683371339784> Uso correto: `g.down @usuario` ou `g.down ID`');
+      await message.reply('<:information2fill:1562606683371339784> Uso correto: `g.down @usuario` ou `g.down ID`');
       return;
     }
 
     const r = await User.findOneAndUpdate({ userId: String(alvoId), staff: true }, { staff: false });
     if (r) {
       log.ok('DOWN', `Staff removido: ${alvoId}`);
-      await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Status de Staff removido de <@${alvoId}>.`);
+      await message.reply(`<:checkboxcirclefill:1562606683371339777> Status de Staff removido de <@${alvoId}>.`);
     } else {
-      await message.channel.send('<:information2fill:1562606683371339784> Este usuário não está na lista de Staffs.');
+      await message.reply('<:information2fill:1562606683371339784> Este usuário não está na lista de Staffs.');
     }
   }
 };

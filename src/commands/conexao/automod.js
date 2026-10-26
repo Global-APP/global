@@ -26,7 +26,7 @@ module.exports = {
     if (!alvo || ligar === null) {
       const cfg = await configDaGuild(gId);
       const st = (v) => (v ? '**filtrando**' : '**liberado**');
-      await message.channel.send(
+      await message.reply(
         '<:information2fill:1562606683371339784> **Filtros deste servidor**\n' +
         `• Palavrões: ${st(cfg.filtrarPalavroes)}\n` +
         `• Links: ${st(cfg.filtrarLinks)}\n\n` +
@@ -37,7 +37,7 @@ module.exports = {
     }
 
     if (!(await temPermissaoConfig(message))) {
-      await message.channel.send('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
+      await message.reply('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
       return;
     }
 
@@ -49,6 +49,6 @@ module.exports = {
 
     log.ok('AUTOMOD', `${alvo} ${ligar ? 'filtrado' : 'liberado'} | ${descreverContexto(message)}`);
     const nome = alvo === 'palavroes' ? 'Palavrões' : 'Links';
-    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> ${nome} agora estão **${ligar ? 'sendo filtrados' : 'liberados'}** neste servidor.`);
+    await message.reply(`<:checkboxcirclefill:1562606683371339777> ${nome} agora estão **${ligar ? 'sendo filtrados' : 'liberados'}** neste servidor.`);
   }
 };

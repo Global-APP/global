@@ -27,9 +27,9 @@ module.exports = {
           { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: '• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** `@fluxerjs/core`\n• **Banco de dados:** MongoDB\n• **Prefixo:** `g.`\n• **Status:** Operacional', inline: false }
         );
 
-      await message.channel.send({ embeds: [embedInfo] });
+      await message.reply({ embeds: [embedInfo] });
     } catch (e) {
-      await message.channel.send(
+      await message.reply(
         '🌐 **Informações do Global**\n\n' +
         `• **Desenvolvedor:** xMqR, Mubi\n` +
         `• **Servidores Conectados:** ${totalServidores}\n` +

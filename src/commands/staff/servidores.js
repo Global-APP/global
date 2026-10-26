@@ -17,7 +17,7 @@ module.exports = {
     ]);
 
     if (lista.length === 0) {
-      await message.channel.send('<:information2fill:1562606683371339784> Nenhum servidor conectado.');
+      await message.reply('<:information2fill:1562606683371339784> Nenhum servidor conectado.');
       return;
     }
 
@@ -31,6 +31,6 @@ module.exports = {
     }).join('\n');
     if (texto.length > 1900) texto = texto.slice(0, 1900) + '\n…';
 
-    await message.channel.send(`<:earthline1:1562606683371339780> **Servidores conectados (${lista.length})**\n${texto}`);
+    await message.reply(`<:earthline1:1562606683371339780> **Servidores conectados (${lista.length})**\n${texto}`);
   }
 };

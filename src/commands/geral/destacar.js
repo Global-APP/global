@@ -20,7 +20,7 @@ module.exports = {
     const possui = badgesDoUsuario(usuario);
 
     if (possui.length === 0) {
-      await message.channel.send(
+      await message.reply(
         '<:information2fill:1562606683371339784> Você ainda não tem badges.\n' +
         `-# Envie ${CONVERSADOR_MENSAGENS} mensagens no chat global em 3 dias para ganhar a badge Conversador.`
       );
@@ -31,7 +31,7 @@ module.exports = {
 
     if (!escolha) {
       const atual = badgeAtiva(usuario);
-      await message.channel.send(
+      await message.reply(
         '<:information2fill:1562606683371339784> Suas badges:\n' +
         `${possui.map((b) => `• ${formatar(b)}${b === atual ? ' (em destaque)' : ''}`).join('\n')}\n` +
         '-# Use `g.destacar <badge>` para escolher ou `g.destacar nenhuma` para voltar ao automático.'
@@ -41,17 +41,17 @@ module.exports = {
 
     if (LIMPAR.includes(escolha)) {
       await selecionarBadge(userId, null);
-      await message.channel.send(`${emojis.success} Destaque removido. A badge de maior prioridade volta a ser usada.`);
+      await message.reply(`${emojis.success} Destaque removido. A badge de maior prioridade volta a ser usada.`);
       return;
     }
 
     const badge = resolverBadge(escolha);
     if (!badge || !possui.includes(badge)) {
-      await message.channel.send(`${emojis.error} Você não possui essa badge. Use \`g.destacar\` para ver as suas.`);
+      await message.reply(`${emojis.error} Você não possui essa badge. Use \`g.destacar\` para ver as suas.`);
       return;
     }
 
     await selecionarBadge(userId, badge);
-    await message.channel.send(`${emojis.success} **${formatar(badge)}** agora está em destaque no seu perfil e na cor das suas mensagens.`);
+    await message.reply(`${emojis.success} **${formatar(badge)}** agora está em destaque no seu perfil e na cor das suas mensagens.`);
   }
 };
