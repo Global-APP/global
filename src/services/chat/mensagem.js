@@ -1,4 +1,5 @@
 const { client } = require('../../lib/client');
+const { DONO_ID, MUBI_ID } = require('../../config');
 
 async function infoMensagem(message) {
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
@@ -65,9 +66,12 @@ function montarPayloadWebhook(message, info, replyTarget) {
   const linkUsuario = autor.id
     ? `[${nomeMascarado}](https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))})`
     : '';
+  const creditoDesenvolvedor = [DONO_ID, MUBI_ID].includes(String(autor.id))
+    ? ' - Desenvolvedor do Global'
+    : '';
   const detalhes = [
     info && info.nomeServidor ? `Enviado de: ${info.nomeServidor}` : '',
-    linkUsuario
+    linkUsuario ? `${linkUsuario}${creditoDesenvolvedor}` : ''
   ].filter(Boolean).join(' • ');
   const atribuicao = detalhes ? `-# ${detalhes}` : '';
   const content = [texto, atribuicao].filter(Boolean).join('\n\n');

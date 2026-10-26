@@ -1,6 +1,6 @@
 const { Events } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
-const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS } = require('../config');
+const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS, PREFIXO } = require('../config');
 const Guild = require('../models/Guild');
 const User = require('../models/User');
 const { limparFalhasDestino } = require('../services/destinos');
@@ -45,7 +45,7 @@ function registrarEventos() {
 
       if (conteudo.includes(`<@${client.user.id}>`)) {
         log.info('MENCAO', descreverContexto(message));
-        await message.channel.send('<:earthline1:1562606683371339780> Olá, eu sou o **Global**, eu conecto comunidades através de um chat global e o meu prefixo é `g.`, caso você gostar de mim, que tal me [adicionar em seu servidor?](<https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=22527189434367169>)');
+        await message.channel.send(`<:earthline1:1562606683371339780> Olá, eu sou o **Global**, eu conecto comunidades através de um chat global e o meu prefixo é \`${PREFIXO}\`, caso você gostar de mim, que tal me [adicionar em seu servidor?](<https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=22527189434367169>)`);
         return;
       }
 

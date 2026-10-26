@@ -1,4 +1,4 @@
-const { DONO_ID } = require('../../config');
+const { DONO_ID, PREFIXO } = require('../../config');
 const User = require('../../models/User');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -23,7 +23,7 @@ module.exports = {
     }
 
     if (!alvoId) {
-      await message.channel.send('<:information2fill:1562606683371339784> Uso correto: `g.down @usuario` ou `g.down ID`');
+      await message.channel.send(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}down @usuario\` ou \`${PREFIXO}down ID\``);
       return;
     }
 

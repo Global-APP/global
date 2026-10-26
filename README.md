@@ -32,6 +32,7 @@ cp .env.example .env
 | Variável       | Obrigatória | Padrão                             |
 | -------------- | ----------- | ---------------------------------- |
 | `TOKEN`        | Sim         | nenhum                             |
+| `PREFIXO`      | Não         | `g.`                               |
 | `MONGODB_URI`  | Não         | `mongodb://127.0.0.1:27017/global` |
 | `NSFW_ENABLED` | Não         | `true`                              |
 | `NSFW_URL`     | Não         | `http://localhost:3000`            |

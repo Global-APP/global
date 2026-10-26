@@ -37,12 +37,12 @@ module.exports = {
     if (tokens.length !== 6) {
       await message.channel.send(
         '<:information2fill:1562606683371339784> **Uso do anúncio**\n' +
-        '`g.anuncio "título" "descrição" #hex "autor" "footer" <mensagens>`\n\n' +
+        `\`${PREFIXO}anuncio "título" "descrição" #hex "autor" "footer" <mensagens>\`\n\n` +
         '• Use `#` sozinho em qualquer campo pra deixá-lo vazio (no hex, usa a cor padrão `#0330ef`).\n' +
         '• Em `<mensagens>`: `#` envia na hora; um número envia a cada N mensagens do chat global.\n' +
         '• Coloque textos com espaços entre **aspas**. Use `\\n` na descrição pra quebrar linha.\n' +
-        '• `g.anuncio parar` desativa o anúncio automático.\n\n' +
-        '**Exemplo:** `g.anuncio "Novidade" "Entrem no nosso servidor!" # "Equipe Global" # 25`' +
+        `• \`${PREFIXO}anuncio parar\` desativa o anúncio automático.\n\n` +
+        `**Exemplo:** \`${PREFIXO}anuncio "Novidade" "Entrem no nosso servidor!" # "Equipe Global" # 25\`` +
         (tokens.length > 0 && tokens.length !== 6 ? `\n-# Recebi ${tokens.length} campos, mas preciso de 6.` : '')
       );
       return;
@@ -91,6 +91,6 @@ module.exports = {
 
     await agendarAnuncio(anuncio, intervalo);
     log.ok('ANUNCIO', `Anúncio automático salvo (a cada ${intervalo} mensagens)`);
-    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Anúncio salvo! Ele será enviado **a cada ${intervalo} mensagens** do chat global.\n-# Use g.anuncio parar para desativar.`);
+    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Anúncio salvo! Ele será enviado **a cada ${intervalo} mensagens** do chat global.\n-# Use ${PREFIXO}anuncio parar para desativar.`);
   }
 };

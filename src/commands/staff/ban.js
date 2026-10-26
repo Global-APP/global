@@ -1,5 +1,5 @@
 const { client } = require('../../lib/client');
-const { DONO_ID, SUPORTE_GUILD_ID } = require('../../config');
+const { DONO_ID, SUPORTE_GUILD_ID, PREFIXO } = require('../../config');
 const User = require('../../models/User');
 const Bloqueio = require('../../models/Bloqueio');
 const { extrairId } = require('../../util/ids');
@@ -17,7 +17,7 @@ module.exports = {
     const tipo = tipoBloqueio(args[0]);
     const alvoId = extrairId(args[1]);
     if (!tipo || !alvoId) {
-      await message.channel.send('<:information2fill:1562606683371339784> Uso correto: `g.ban usuario <@usuario|ID> [motivo]` ou `g.ban servidor <ID> [motivo]`');
+      await message.channel.send(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}ban usuario <@usuario|ID> [motivo]\` ou \`${PREFIXO}ban servidor <ID> [motivo]\``);
       return;
     }
 

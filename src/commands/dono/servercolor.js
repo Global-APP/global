@@ -1,4 +1,4 @@
-const { DONO_ID } = require('../../config');
+const { DONO_ID, PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -16,7 +16,7 @@ module.exports = {
     }
 
     if (args.length < 2) {
-      await message.channel.send('<:information2fill:1562606683371339784> Uso correto: `g.servercolor <ID_DO_SERVIDOR> <#HEX>`');
+      await message.channel.send(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}servercolor <ID_DO_SERVIDOR> <#HEX>\``);
       return;
     }
 

@@ -1,4 +1,5 @@
 const Palavra = require('../../models/Palavra');
+const { PREFIXO } = require('../../config');
 const { recarregarPalavras, acharPalavraProibida, totalEntradas } = require('../../services/filtros/palavras');
 const { normalizarTexto } = require('../../services/filtros/normalizacao');
 const { log } = require('../../util/logger');
@@ -37,7 +38,7 @@ module.exports = {
       await recarregarPalavras();
       await message.channel.send(r.deletedCount > 0
         ? '<:checkboxcirclefill:1562606683371339777> Palavra removida do filtro.'
-        : '<:information2fill:1562606683371339784> Essa palavra não está na lista personalizada (se vier das listas de arquivos, use `g.filtro liberar`).');
+        : `<:information2fill:1562606683371339784> Essa palavra não está na lista personalizada (se vier das listas de arquivos, use \`${PREFIXO}filtro liberar\`).`);
       return;
     }
 
@@ -91,7 +92,7 @@ module.exports = {
     }
 
     await message.channel.send(
-      '<:information2fill:1562606683371339784> Uso: `g.filtro add|remove <palavra>`, `liberar|desliberar <palavra>`, `testar <texto>`, `recarregar` ou `list`'
+      `<:information2fill:1562606683371339784> Uso: \`${PREFIXO}filtro add|remove <palavra>\`, \`liberar|desliberar <palavra>\`, \`testar <texto>\`, \`recarregar\` ou \`list\``
     );
   }
 };

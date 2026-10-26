@@ -1,4 +1,4 @@
-const { DONO_ID } = require('../../config');
+const { DONO_ID, PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
@@ -41,7 +41,7 @@ module.exports = {
 
     await message.channel.send(
       `<:checkboxcirclefill:1562606683371339777> O canal <#${message.channel.id}> foi definido com sucesso como a \`Conexão Global\`.\n` +
-      '-# Execute g.config no canal que **você quer definir** a conexão global.'
+      `-# Execute ${PREFIXO}config no canal que **você quer definir** a conexão global.`
     );
   }
 };

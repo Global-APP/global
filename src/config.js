@@ -1,4 +1,4 @@
-const PREFIXO = 'g.';
+const PREFIXO = process.env.PREFIXO?.trim() || 'g.';
 
 const DONO_ID = '1561676586179100672';
 

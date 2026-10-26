@@ -1,3 +1,4 @@
+const { PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -14,13 +15,13 @@ async function alternarPausa(message, pausar) {
 
   const r = await Guild.updateOne({ guildId: String(guildId), canalId: { $ne: null } }, { pausado: pausar });
   if (r.matchedCount === 0) {
-    await message.channel.send('<:information2fill:1562606683371339784> Este servidor não está conectado ao chat global. Use `g.config` primeiro.');
+    await message.channel.send(`<:information2fill:1562606683371339784> Este servidor não está conectado ao chat global. Use \`${PREFIXO}config\` primeiro.`);
     return;
   }
 
   log.ok(pausar ? 'PAUSAR' : 'RETOMAR', descreverContexto(message));
   await message.channel.send(pausar
-    ? '<:checkboxcirclefill:1562606683371339777> Chat global **pausado** neste servidor (não envia nem recebe mensagens).\n-# Use g.retomar para voltar.'
+    ? `<:checkboxcirclefill:1562606683371339777> Chat global **pausado** neste servidor (não envia nem recebe mensagens).\n-# Use ${PREFIXO}retomar para voltar.`
     : '<:checkboxcirclefill:1562606683371339777> Chat global **retomado** neste servidor.');
 }
 

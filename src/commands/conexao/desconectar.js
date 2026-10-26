@@ -1,3 +1,4 @@
+const { PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
@@ -26,7 +27,7 @@ module.exports = {
     limparFalhasDestino(gId);
     if (r.matchedCount > 0) {
       log.ok('DESCONECTAR', `Servidor desconectado | ${descreverContexto(message)}`);
-      await message.channel.send('<:checkboxcirclefill:1562606683371339777> Este servidor foi desconectado do chat global.\n-# Use g.config no canal desejado para reconectar.');
+      await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Este servidor foi desconectado do chat global.\n-# Use ${PREFIXO}config no canal desejado para reconectar.`);
     } else {
       await message.channel.send('<:information2fill:1562606683371339784> Este servidor não está conectado ao chat global.');
     }

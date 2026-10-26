@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { CANAL_REPORTS, COOLDOWN_REPORT } = require('../../config');
+const { CANAL_REPORTS, COOLDOWN_REPORT, PREFIXO } = require('../../config');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { log } = require('../../util/logger');
 
@@ -19,7 +19,7 @@ module.exports = {
 
     const refId = message.messageReference ? message.messageReference.messageId : null;
     if (!refId) {
-      await message.channel.send('<:information2fill:1562606683371339784> **Responda** (reply) à mensagem que deseja denunciar usando `g.report [motivo]`.');
+      await message.channel.send(`<:information2fill:1562606683371339784> **Responda** (reply) à mensagem que deseja denunciar usando \`${PREFIXO}report [motivo]\`.`);
       return;
     }
 
@@ -82,7 +82,7 @@ module.exports = {
           { name: 'Motivo', value: motivo, inline: false },
           { name: 'Mensagem', value: trecho, inline: false }
         )
-        .setFooter({ text: `g.ban usuario ${origem.autorId}  •  msg ${r.grupoId}` });
+        .setFooter({ text: `${PREFIXO}ban usuario ${origem.autorId}  •  msg ${r.grupoId}` });
 
       await canal.send({ embeds: [embed] });
       cooldownReports.set(message.author.id, Date.now());
