@@ -22,6 +22,8 @@ module.exports = {
       publico('g.pausar/retomar', 'Pausa ou retoma o chat global neste servidor.'),
       publico('g.automod', 'Escolhe se este servidor filtra palavrões e links (padrão: liberados).'),
       publico('g.report', 'Responda a uma mensagem do global com g.report [motivo] para denunciá-la.'),
+      publico('g.perfil/profile', 'Mostra o card de perfil seu ou de outro usuário.'),
+      publico('g.destacar', 'Escolhe a badge em destaque no perfil e na cor das suas mensagens.'),
       publico('g.botinfo/global', 'Envia as informações principais do Global.')
     ];
 
@@ -30,6 +32,7 @@ module.exports = {
         restrito('g.ban/unban', 'Bloqueia ou desbloqueia um usuário ou servidor do global.'),
         restrito('g.bloqueios', 'Lista usuários e servidores bloqueados.'),
         restrito('g.filtro', 'Gerencia o filtro (add/remove/liberar/testar/recarregar/list).'),
+        restrito('g.badge', 'Concede, remove ou lista as badges de um usuário.'),
         restrito('g.servidores', 'Lista os servidores conectados ao global.')
       );
     }

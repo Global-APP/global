@@ -3,6 +3,7 @@ const { client } = require('../../lib/client');
 const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
 const Guild = require('../../models/Guild');
 const User = require('../../models/User');
+const { corDaBadge } = require('../badges');
 
 function obterIconeServidor(g) {
   if (!g) return null;
@@ -37,16 +38,18 @@ async function infoMensagem(message) {
   const nickname = autor.displayName || autor.username;
   const username = autor.username;
 
-  const [guildConfig, ehStaff] = await Promise.all([
+  const [guildConfig, usuario] = await Promise.all([
     Guild.findOne({ guildId }).lean(),
-    User.exists({ userId: String(autor.id), staff: true })
+    User.findOne({ userId: String(autor.id) }).select('staff badges selectedBadge').lean()
   ]);
+  const ehStaff = !!(usuario && usuario.staff);
 
   const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
   const iconeServidor = mostrarIcone ? obterIconeServidor(g) : null;
 
   let authorText = `${nickname} (@${username}#${autor.discriminator})`;
-  let corEmbed = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
+  const corGuild = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
+  let corEmbed = corDaBadge(usuario) ?? corGuild;
 
   if (autor.id === DONO_ID) {
     authorText = `${nickname} (@${username}#${autor.discriminator}) - Desenvolvedor do Global`;
@@ -56,7 +59,6 @@ async function infoMensagem(message) {
     corEmbed = COR_EMBED_MUBI;
   } else if (ehStaff) {
     authorText = `${nickname} (@${username}#${autor.discriminator}) - Staff`;
-    corEmbed = 0xeb0075;
   }
 
   let urlMidia = null;

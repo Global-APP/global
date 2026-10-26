@@ -11,5 +11,6 @@ const mensagemGlobalSchema = new Schema({
 
 mensagemGlobalSchema.index({ grupoId: 1, guildId: 1 });
 mensagemGlobalSchema.index({ criadoEm: 1 });
+mensagemGlobalSchema.index({ autorId: 1, criadoEm: 1 });
 
 module.exports = model('MensagemGlobal', mensagemGlobalSchema);
