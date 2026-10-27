@@ -10,6 +10,7 @@ const guildSchema = new Schema(
     cor: { type: Number, default: null },
     modoMensagem: { type: String, enum: ['cru', 'embed'], default: 'cru' },
     configPainelMessageId: { type: String, default: null },
+    configPainelUserId: { type: String, default: null },
     webhookId: { type: String, default: null },
     webhookToken: { type: String, default: null, select: false },
     mostrarIcone: { type: Boolean, default: false },

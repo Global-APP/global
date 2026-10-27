@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
 const Guild = require('../models/Guild');
 const { ehDev } = require('../config');
@@ -18,8 +19,8 @@ function acaoDaReacao(emojiName) {
   return ACOES_REACAO[emojiName] || null;
 }
 
-function textoPainel(config = {}) {
-  const modo = config.modoMensagem === 'embed' ? 'Embed' : 'Cru';
+function textoPainel(config = {}, feedback) {
+  const modo = config.modoMensagem === 'embed' ? 'Embed' : 'Normal';
   const icone = config.mostrarIcone === true ? 'visível' : 'oculto';
   const canal = config.canalId ? `<#${config.canalId}>` : 'não configurada';
 
@@ -29,9 +30,16 @@ function textoPainel(config = {}) {
     `Ícone do servidor: **${icone}**`,
     `Conexão global: **${canal}**`,
     '',
-    'Reaja para escolher uma opção. Para reutilizar a mesma reação, remova sua reação anterior primeiro.',
-    '🖼️ Embed · 📝 Cru · 🌄 Exibir ícone · 🚫 Ocultar ícone · 📌 Conectar este canal'
+    'Reaja para escolher uma opção. Sua reação será removida após o processamento.',
+    '🖼️ Embed · 📝 Normal · 🌄 Exibir ícone · 🚫 Ocultar ícone · 📌 Conectar este canal',
+    ...(feedback ? ['', `✅ ${feedback}`] : [])
   ].join('\n');
+}
+
+function embedPainel(config = {}, carregando = false, feedback) {
+  const embed = new EmbedBuilder();
+  embed.setDescription(carregando ? 'Carregando…' : textoPainel(config, feedback));
+  return embed;
 }
 
 async function tratarReacaoPainel(payload, deps = {}) {
@@ -67,6 +75,12 @@ async function tratarReacaoPainel(payload, deps = {}) {
     const guildConfig = await api.Guild.findOne({ guildId }).lean();
     if (!guildConfig || String(guildConfig.configPainelMessageId) !== messageId) return false;
 
+    api.log.info('CONFIG', `Reação recebida no painel ${messageId}: ${userId} ${payload.emoji && payload.emoji.name}`);
+    if (!guildConfig.configPainelUserId || String(guildConfig.configPainelUserId) !== userId) {
+      api.log.warn('CONFIG', `Reação ignorada: ${userId} não é o autor do painel ${messageId}`);
+      return false;
+    }
+
     if (!api.ehDev(userId)) {
       const canResolveGuild = typeof message.resolveGuild === 'function';
       const actorMessage = {
@@ -81,7 +95,10 @@ async function tratarReacaoPainel(payload, deps = {}) {
           };
         }
       };
-      if (!(await api.membroPodeGerenciarCanais(actorMessage))) return false;
+      if (!(await api.membroPodeGerenciarCanais(actorMessage))) {
+        api.log.warn('CONFIG', `Reação ignorada: autor ${userId} não tem mais permissão de configuração no servidor ${guildId}`);
+        return false;
+      }
     }
 
     if (action === 'definirCanal') {
@@ -95,15 +112,26 @@ async function tratarReacaoPainel(payload, deps = {}) {
           : action === 'mostrarIcone' ? { mostrarIcone: true }
             : { mostrarIcone: false };
       const result = await api.Guild.updateOne(
-        { guildId, configPainelMessageId: messageId },
+        { guildId, configPainelMessageId: messageId, configPainelUserId: userId },
         { $set: set }
       );
       if (!result || result.matchedCount === 0) return false;
     }
 
+    const emojiName = (payload.emoji && payload.emoji.name)
+      || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name);
+    try {
+      await message.removeReaction(emojiName, userId);
+    } catch (e) {
+      api.log.error('CONFIG', `Configuração salva, mas a reação ${emojiName} do autor ${userId} não pôde ser removida do painel ${messageId}`, e);
+    }
+
     try {
       const atualizado = await api.Guild.findOne({ guildId }).lean();
-      await message.edit({ content: textoPainel(atualizado || {}), allowedMentions: { parse: [] } });
+      await message.edit({
+        embeds: [embedPainel(atualizado || {}, false, 'Configuração atualizada com sucesso!')],
+        allowedMentions: { parse: [] }
+      });
     } catch (e) {
       api.log.error('CONFIG', `Configuração salva, mas o painel ${messageId} não pôde ser atualizado`, e);
     }
@@ -114,4 +142,4 @@ async function tratarReacaoPainel(payload, deps = {}) {
   }
 }
 
-module.exports = { ACOES_REACAO, acaoDaReacao, textoPainel, tratarReacaoPainel };
+module.exports = { ACOES_REACAO, acaoDaReacao, textoPainel, embedPainel, tratarReacaoPainel };
