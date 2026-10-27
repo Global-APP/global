@@ -1,4 +1,4 @@
-const { DONO_ID } = require('../../config');
+const { ehDev } = require('../../config');
 const User = require('../../models/User');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -9,7 +9,7 @@ module.exports = {
   description: 'Promove um usuário a staff.',
 
   async execute(message, args) {
-    if (message.author.id !== DONO_ID) {
+    if (!ehDev(message.author.id)) {
       log.warn('UP', `Acesso negado para ${descreverContexto(message)}`);
       await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
