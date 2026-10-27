@@ -1,9 +1,9 @@
 const PREFIXO = process.env.PREFIXO?.trim() || 'g.';
 const DEBUG_MODE = process.argv.includes('--debug');
 
-const DONO_ID = '1561676586179100672';
+const DONO_ID = process.env.DONO_ID?.trim() || '1561676586179100672';
 
-const MUBI_ID = '1561698550566363137';
+const MUBI_ID = process.env.MUBI_ID?.trim() || '1561698550566363137';
 
 const COR_EMBED_MUBI = 0xeb0075;
 

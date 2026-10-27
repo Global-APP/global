@@ -22,8 +22,8 @@ function acaoDaReacao(emojiName) {
 }
 
 function textoPainel(config = {}, feedback) {
-  const modo = config.modoMensagem === 'embed' ? 'Embed' : 'Normal';
-  const icone = config.mostrarIcone === true ? 'visível' : 'oculto';
+  const modo = config.modoMensagem === 'cru' ? 'Normal' : 'Embed';
+  const icone = config.mostrarIcone === false ? 'oculto' : 'visível';
   const canal = config.canalId ? `<#${config.canalId}>` : 'não configurada';
 
   return [

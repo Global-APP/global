@@ -115,5 +115,8 @@ dist
 .gitignore
 
 docs/
+docs/superpowers/
 test/
+tests/
 start.sh
+.superpowers/

@@ -37,12 +37,17 @@ cp .env.example .env
 | `NSFW_ENABLED` | Não         | `true`                              |
 | `NSFW_URL`     | Não         | `http://localhost:3000`            |
 | `NSFW_API_KEY` | Não         | vazio                              |
+| `DONO_ID`      | Não         | 1561676586179100672                |
+| `MUBI_ID`      | Não         | 1561698550566363137                |
 
 > [!NOTE]
 > Caso deseja usar o serviço para filtragem de mídias NSFW, o mesmo fica localizado em: https://huggingface.co/AdamCodd/vit-base-nsfw-detector
 
 > [!NOTE]
 > Defina `NSFW_ENABLED=false` para desativar a checagem e não precisar de `NSFW_URL`; nesse modo, imagens e vídeos não passam pelo filtro NSFW. Se habilitado, mantenha o serviço no endereço configurado em `NSFW_URL`.
+
+> [!NOTE]
+> Caso deseja usar os comandos especiais de admin, troque o ID de DONO_ID para o seu.
 
 ## Execução
 

@@ -53,8 +53,8 @@ async function listarDestinosAtivos() {
       canalId: g.canalId,
       filtrarPalavroes: !!g.filtrarPalavroes,
       filtrarLinks: !!g.filtrarLinks,
-      modoMensagem: g.modoMensagem === 'embed' ? 'embed' : 'cru',
-      mostrarIcone: g.mostrarIcone === true
+      modoMensagem: g.modoMensagem === 'cru' ? 'cru' : 'embed',
+      mostrarIcone: g.mostrarIcone !== false
     }));
 }
 

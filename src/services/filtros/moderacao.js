@@ -15,8 +15,8 @@ async function configDaGuild(guildId) {
   return {
     filtrarPalavroes: !!(row && row.filtrarPalavroes),
     filtrarLinks: !!(row && row.filtrarLinks),
-    modoMensagem: row && row.modoMensagem === 'embed' ? 'embed' : 'cru',
-    mostrarIcone: !!(row && row.mostrarIcone)
+    modoMensagem: row && row.modoMensagem === 'cru' ? 'cru' : 'embed',
+    mostrarIcone: !row || row.mostrarIcone !== false
   };
 }
 

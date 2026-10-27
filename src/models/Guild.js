@@ -8,12 +8,12 @@ const guildSchema = new Schema(
     filtrarPalavroes: { type: Boolean, default: false },
     filtrarLinks: { type: Boolean, default: false },
     cor: { type: Number, default: null },
-    modoMensagem: { type: String, enum: ['cru', 'embed'], default: 'cru' },
+    modoMensagem: { type: String, enum: ['cru', 'embed'], default: 'embed' },
     configPainelMessageId: { type: String, default: null },
     configPainelUserId: { type: String, default: null },
     webhookId: { type: String, default: null },
     webhookToken: { type: String, default: null, select: false },
-    mostrarIcone: { type: Boolean, default: false },
+    mostrarIcone: { type: Boolean, default: true },
     webhooksAntigas: {
       type: [{
         canalId: { type: String, required: true },

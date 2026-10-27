@@ -47,7 +47,7 @@ async function infoMensagem(message, preferenciasExibicao) {
   const mostrarIcone = !configExibicao || configExibicao.mostrarIcone !== false;
   return {
     guildId,
-    modoMensagem: configExibicao && configExibicao.modoMensagem === 'embed' ? 'embed' : 'cru',
+    modoMensagem: configExibicao && configExibicao.modoMensagem === 'cru' ? 'cru' : 'embed',
     nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido',
     iconeServidor: mostrarIcone ? obterIconeServidor(guild) : null,
     corEmbed
