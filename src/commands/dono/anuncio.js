@@ -1,4 +1,4 @@
-const { COR_PADRAO_ANUNCIO, DONO_ID, PREFIXO } = require('../../config');
+const { COR_PADRAO_ANUNCIO, ehDev, PREFIXO } = require('../../config');
 const { desativarAnuncio, agendarAnuncio, enviarAnuncioParaTodos } = require('../../services/anuncio');
 const { log, descreverContexto } = require('../../util/logger');
 
@@ -18,7 +18,7 @@ module.exports = {
   description: 'Cria ou agenda um anúncio global.',
 
   async execute(message) {
-    if (message.author.id !== DONO_ID) {
+    if (!ehDev(message.author.id)) {
       log.warn('ANUNCIO', `Acesso negado para ${descreverContexto(message)}`);
       await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
