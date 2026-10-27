@@ -1,7 +1,7 @@
 const emojis = {
     error: "<:errorwarningfill:1563362758655746048>",
     success: "<:checkboxcirclefill:1562606683371339777>",
-} 
+}
 
 const badges = {
     active: "<:conversador:1563670318453628928>",
