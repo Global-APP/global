@@ -5,7 +5,7 @@ const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { membroPodeGerenciarCanais } = require('../../services/permissoes');
 const { obterWebhook } = require('../../services/webhooks');
-const { ACOES_REACAO, embedPainel } = require('../../services/configPainel');
+const { reacoesDoPainel, embedPainel } = require('../../services/configPainel');
 
 const VALORES_LIGAR = ['on', 'ligar', 'ativar', 'sim', 'true'];
 const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'];
@@ -55,7 +55,7 @@ module.exports = {
         allowedMentions: { parse: [] }
       });
 
-      for (const emoji of Object.keys(ACOES_REACAO)) {
+      for (const emoji of reacoesDoPainel(atual || {})) {
         await painel.react(emoji);
       }
 

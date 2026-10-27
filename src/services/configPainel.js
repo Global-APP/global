@@ -22,24 +22,55 @@ function acaoDaReacao(emojiName) {
 }
 
 function textoPainel(config = {}, feedback) {
-  const modo = config.modoMensagem === 'cru' ? 'Normal' : 'Embed';
+  const modoEmbed = config.modoMensagem !== 'cru';
+  const modo = modoEmbed ? 'Embed' : 'Normal';
   const icone = config.mostrarIcone === false ? 'oculto' : 'visível';
   const canal = config.canalId ? `<#${config.canalId}>` : 'não configurada';
 
   return [
-    '**Configurações do Global**',
     `Modo atual: **${modo}**`,
-    `Ícone do servidor: **${icone}**`,
+    ...(modoEmbed ? [`Ícone do servidor: **${icone}**`] : []),
     `Conexão global: **${canal}**`,
     '',
-    'Reaja para escolher uma opção. Sua reação será removida após o processamento.',
-    '🖼️ Embed · 📝 Normal · 🌄 Exibir ícone · 🚫 Ocultar ícone · 📌 Conectar este canal',
+    'Reaja para escolher uma opção.',
+    `🖼️ Embed · 📝 Normal${modoEmbed ? ' · 🌄 Exibir ícone · 🚫 Ocultar ícone' : ''} · 📌 Conectar este canal`,
     ...(feedback ? ['', `✅ ${feedback}`] : [])
   ].join('\n');
 }
 
+function reacoesDoPainel(config = {}) {
+  const modoEmbed = config.modoMensagem !== 'cru';
+  return Object.entries(ACOES_REACAO)
+    .filter(([, action]) => modoEmbed || (action !== 'mostrarIcone' && action !== 'ocultarIcone'))
+    .map(([emoji]) => emoji);
+}
+
+async function sincronizarReacoesIcone(message, modoMensagem, clientId, apiLog = log) {
+  if (modoMensagem === 'cru') {
+    if (typeof message.removeReaction !== 'function' || !clientId) return;
+    for (const emoji of ['🌄', '🚫']) {
+      try {
+        await message.removeReaction(emoji, clientId);
+      } catch (error) {
+        apiLog.error('CONFIG', `Não foi possível ocultar a reação ${emoji} do painel`, error);
+      }
+    }
+    return;
+  }
+
+  if (typeof message.react !== 'function') return;
+  for (const emoji of ['🌄', '🚫']) {
+    try {
+      await message.react(emoji);
+    } catch (error) {
+      apiLog.error('CONFIG', `Não foi possível exibir a reação ${emoji} do painel`, error);
+    }
+  }
+}
+
 function embedPainel(config = {}, carregando = false, feedback) {
   const embed = new EmbedBuilder();
+  embed.setTitle('<:earthline1:1562606683371339780> Configurações do Global');
   embed.setDescription(carregando ? 'Carregando…' : textoPainel(config, feedback));
   return embed;
 }
@@ -91,6 +122,11 @@ async function tratarReacaoPainel(payload, deps = {}) {
     }
     if (String(guildConfig.configPainelMessageId) !== messageId) {
       api.log.debug('CONFIG', `Reação ignorada: painel ${messageId} não é o ativo; atual=${guildConfig.configPainelMessageId || 'nenhum'}`);
+      return false;
+    }
+
+    if ((action === 'mostrarIcone' || action === 'ocultarIcone') && guildConfig.modoMensagem === 'cru') {
+      api.log.debug('CONFIG', `Reação de ícone ignorada: painel ${messageId} está no modo Normal`);
       return false;
     }
 
@@ -161,6 +197,9 @@ async function tratarReacaoPainel(payload, deps = {}) {
 
     try {
       const atualizado = await api.Guild.findOne({ guildId }).lean();
+      if (action === 'embed' || action === 'cru') {
+        await sincronizarReacoesIcone(message, atualizado && atualizado.modoMensagem, api.client.user && String(api.client.user.id), api.log);
+      }
       await message.edit({
         embeds: [embedPainel(atualizado || {}, false, 'Configuração atualizada com sucesso!')],
         allowedMentions: { parse: [] }
@@ -175,4 +214,4 @@ async function tratarReacaoPainel(payload, deps = {}) {
   }
 }
 
-module.exports = { ACOES_REACAO, acaoDaReacao, textoPainel, embedPainel, tratarReacaoPainel };
+module.exports = { ACOES_REACAO, acaoDaReacao, textoPainel, reacoesDoPainel, embedPainel, tratarReacaoPainel };
