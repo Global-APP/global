@@ -1,4 +1,4 @@
-const { DONO_ID, PREFIXO } = require('../../config');
+const { ehDev, PREFIXO } = require('../../config');
 const User = require('../../models/User');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -9,9 +9,9 @@ module.exports = {
   description: 'Promove um usuário a staff.',
 
   async execute(message, args) {
-    if (message.author.id !== DONO_ID) {
+    if (!ehDev(message.author.id)) {
       log.warn('UP', `Acesso negado para ${descreverContexto(message)}`);
-      await message.channel.send('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
+      await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
     }
 
@@ -23,13 +23,13 @@ module.exports = {
     }
 
     if (!alvoId) {
-      await message.channel.send(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}up @usuario\` ou \`${PREFIXO}up ID\``);
+      await message.reply(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}up @usuario\` ou \`${PREFIXO}up ID\``);
       return;
     }
 
     await User.findOneAndUpdate({ userId: String(alvoId) }, { staff: true }, { upsert: true });
     log.ok('UP', `Usuário ${alvoId} promovido a Staff`);
 
-    await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Usuário <@${alvoId}> foi promovido a **Staff**.`);
+    await message.reply(`<:checkboxcirclefill:1562606683371339777> Usuário <@${alvoId}> foi promovido a **Staff**.`);
   }
 };
