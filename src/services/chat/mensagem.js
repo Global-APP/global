@@ -45,6 +45,7 @@ async function infoMensagem(message) {
   const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
   return {
     guildId,
+    modoMensagem: guildConfig && guildConfig.modoMensagem === 'embed' ? 'embed' : 'cru',
     nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido',
     iconeServidor: mostrarIcone ? obterIconeServidor(guild) : null,
     corEmbed
@@ -77,6 +78,25 @@ function montarEmbedContexto(info) {
       text: info && info.nomeServidor ? info.nomeServidor : 'Servidor Desconhecido',
       ...(info && info.iconeServidor ? { iconURL: info.iconeServidor } : {})
     });
+}
+
+function montarEmbedMensagem(message, info, texto) {
+  const embed = montarEmbedContexto(info);
+  const autor = message.author || {};
+  const nome = (message.member && message.member.displayName)
+    || autor.displayName
+    || autor.globalName
+    || autor.username
+    || 'Usuário';
+  const avatarUrl = typeof autor.displayAvatarURL === 'function' ? autor.displayAvatarURL() : null;
+
+  embed.setAuthor({ name: nome, ...(avatarUrl ? { iconURL: avatarUrl } : {}) });
+  if (texto) embed.setDescription(texto);
+
+  const imagem = listar(message.attachments)
+    .find((anexo) => anexo && anexo.url && /\.(?:png|jpe?g|gif|webp)(?:\?|$)/i.test(anexo.url));
+  if (imagem) embed.setImage(imagem.url);
+  return embed;
 }
 
 /**
@@ -125,12 +145,14 @@ function montarPayloadWebhook(message, info, replyTarget) {
   ].filter(Boolean).join(' • ');
   const atribuicao = detalhes ? `-# ${detalhes}` : '';
   const content = [texto, atribuicao].filter(Boolean).join('\n\n');
+  const embedMode = info && info.modoMensagem === 'embed';
   const payload = {
     username: nomeWebhook,
-    content,
-    embeds: [montarEmbedContexto(info)],
+    content: embedMode ? '' : content,
     allowedMentions: { parse: [] }
   };
+
+  if (embedMode) payload.embeds = [montarEmbedMensagem(message, info, [texto, atribuicao].filter(Boolean).join('\n\n'))];
 
   if (avatarUrl) payload.avatarUrl = avatarUrl;
   if (files.length > 0) payload.files = files;
@@ -143,11 +165,16 @@ function montarPayloadWebhook(message, info, replyTarget) {
 }
 
 function montarPayloadEdicao(message, info) {
-  return {
+  const payload = {
     content: message.content || '',
-    embeds: [montarEmbedContexto(info)],
+    embeds: [],
     allowedMentions: { parse: [] }
   };
+  if (info && info.modoMensagem === 'embed') {
+    payload.content = '';
+    payload.embeds = [montarEmbedMensagem(message, info, message.content || '')];
+  }
+  return payload;
 }
 
 module.exports = { infoMensagem, montarPayloadWebhook, montarPayloadEdicao };

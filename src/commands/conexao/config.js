@@ -1,10 +1,11 @@
-const { DONO_ID, PREFIXO } = require('../../config');
+const { ehDev, PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { membroPodeGerenciarCanais } = require('../../services/permissoes');
 const { obterWebhook } = require('../../services/webhooks');
+const { ACOES_REACAO, textoPainel } = require('../../services/configPainel');
 
 const VALORES_LIGAR = ['on', 'ligar', 'ativar', 'sim', 'true'];
 const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'];
@@ -12,13 +13,13 @@ const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'
 module.exports = {
   name: 'config',
   aliases: ['configurar', 'configurações'],
-  description: 'Define o canal atual como a conexão global. Subcomandos: servericon.',
+  description: 'Abre o painel de configurações da conexão global.',
 
   async execute(message, args = []) {
     const guildId = idDoServidor(message);
     if (!guildId) return;
 
-    if (message.author.id !== DONO_ID) {
+    if (!ehDev(message.author.id)) {
       const temPermissao = await membroPodeGerenciarCanais(message);
       if (!temPermissao) {
         log.warn('CONFIG', `Permissão negada para ${descreverContexto(message)}`);
@@ -37,12 +38,42 @@ module.exports = {
     if (sub) {
       await message.reply(
         '<:closecirclefill:1562606683371339786> Subcomando inválido.\n' +
-        `-# Use \`${PREFIXO}config\` para definir o canal ou \`${PREFIXO}config servericon [on|off]\` para o ícone do servidor.`
+        `-# Use \`${PREFIXO}config\` para abrir o painel ou \`${PREFIXO}config servericon [on|off]\` para o ícone do servidor.`
       );
       return;
     }
 
-    return this.definirCanal(message, gId);
+    return this.publicarPainelConfiguracao(message, gId);
+  },
+
+  async publicarPainelConfiguracao(message, guildId) {
+    let painel = null;
+    try {
+      const atual = await Guild.findOne({ guildId }).lean();
+      painel = await message.channel.send({
+        content: textoPainel(atual || {}),
+        allowedMentions: { parse: [] }
+      });
+
+      for (const emoji of Object.keys(ACOES_REACAO)) {
+        await painel.react(emoji);
+      }
+
+      await Guild.findOneAndUpdate(
+        { guildId },
+        { $set: { configPainelMessageId: String(painel.id) } },
+        { upsert: true, new: true }
+      );
+      log.ok('CONFIG', `Painel publicado | ${descreverContexto(message)}`);
+      return painel;
+    } catch (e) {
+      if (painel && typeof painel.delete === 'function') {
+        await painel.delete().catch(() => {});
+      }
+      log.error('CONFIG', `Falha ao publicar painel | ${descreverContexto(message)}`, e);
+      await message.reply('<:closecirclefill:1562606683371339786> Não consegui abrir o painel de configurações. Verifique as permissões de enviar mensagens e adicionar reações, depois tente novamente.');
+      return null;
+    }
   },
 
   async definirCanal(message, gId) {
