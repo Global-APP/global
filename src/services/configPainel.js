@@ -56,9 +56,10 @@ async function tratarReacaoPainel(payload, deps = {}) {
     }
     if (!message) return false;
 
-    const guildId = String(payload.guildId || message.guildId || '');
+    const messageGuildId = String(message.guildId || '');
+    const guildId = String(payload.guildId || messageGuildId || '');
     const messageId = String(payload.messageId || message.id || '');
-    if (!guildId || !messageId) return false;
+    if (!guildId || !messageGuildId || guildId !== messageGuildId || !messageId) return false;
 
     const action = acaoDaReacao((payload.emoji && payload.emoji.name) || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name));
     if (!action) return false;

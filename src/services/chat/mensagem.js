@@ -167,6 +167,7 @@ function montarPayloadWebhook(message, info, replyTarget) {
 function montarPayloadEdicao(message, info) {
   const payload = {
     content: message.content || '',
+    embeds: [],
     allowedMentions: { parse: [] }
   };
   if (info && info.modoMensagem === 'embed') {
