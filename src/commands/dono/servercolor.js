@@ -1,4 +1,4 @@
-const { DONO_ID } = require('../../config');
+const { ehDev } = require('../../config');
 const Guild = require('../../models/Guild');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -9,7 +9,7 @@ module.exports = {
   description: 'Troca a cor das mensagens dos membros de um servidor.',
 
   async execute(message, args) {
-    if (message.author.id !== DONO_ID) {
+    if (!ehDev(message.author.id)) {
       log.warn('SERVERCOLOR', `Acesso negado para ${descreverContexto(message)}`);
       await message.reply('<:closecirclefill:1562606683371339786> **Somente o desenvolvedor do Global** pode realizar essa ação.');
       return;
