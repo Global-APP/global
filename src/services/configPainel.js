@@ -69,10 +69,11 @@ async function tratarReacaoPainel(payload, deps = {}) {
       return false;
     }
 
-    const messageGuildId = String(message.guildId || '');
-    const guildId = String(payload.guildId || messageGuildId || '');
+    const messageGuildId = String(message.guildId || message.channel?.guildId || payload.channel?.guildId || '');
+    const reactionGuildId = payload.reaction && payload.reaction.guildId;
+    const guildId = String(payload.guildId || reactionGuildId || messageGuildId || '');
     const messageId = String(payload.messageId || message.id || '');
-    if (!guildId || !messageGuildId || guildId !== messageGuildId || !messageId) {
+    if (!guildId || (messageGuildId && guildId !== messageGuildId) || !messageId) {
       api.log.debug('CONFIG', `Reação ignorada: contexto inválido guild=${guildId || '?'} messageGuild=${messageGuildId || '?'} message=${messageId || '?'}`);
       return false;
     }
