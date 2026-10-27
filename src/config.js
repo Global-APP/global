@@ -6,6 +6,10 @@ const MUBI_ID = '1561698550566363137';
 
 const COR_EMBED_MUBI = 0xeb0075;
 
+const DEVS = [DONO_ID, MUBI_ID];
+
+const ehDev = (id) => DEVS.includes(String(id));
+
 const COR_BADGE = {
   staff: 0xeb0075,
   developer: 0x4facfe,
@@ -80,6 +84,8 @@ module.exports = {
   DONO_ID,
   MUBI_ID,
   COR_EMBED_MUBI,
+  DEVS,
+  ehDev,
   COR_BADGE,
   PRIORIDADE_BADGES,
   ROTULO_BADGE,
