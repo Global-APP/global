@@ -15,7 +15,7 @@ const { acaoDaReacao, tratarReacaoPainel } = require('../services/configPainel')
 function registrarLogReacao(tipo, payload, userId, emoji) {
   if (!acaoDaReacao(emoji)) return;
   const messageId = payload.messageId || (payload.message && payload.message.id) || '?';
-  const guildId = payload.guildId || (payload.message && payload.message.guildId) || '?';
+  const guildId = payload.guildId || (payload.reaction && payload.reaction.guildId) || (payload.message && payload.message.guildId) || (payload.channel && payload.channel.guildId) || '?';
   const channelId = payload.channelId || (payload.message && payload.message.channelId) || '?';
   log.debug('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emoji)} cachedMessage=${Boolean(payload.message)}`);
 }
