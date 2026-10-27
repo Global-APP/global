@@ -91,7 +91,8 @@ function montarEmbedMensagem(message, info, texto) {
     || 'Usuário';
   const avatarUrl = typeof autor.displayAvatarURL === 'function' ? autor.displayAvatarURL() : null;
 
-  embed.setAuthor({ name: nome, ...(avatarUrl ? { iconURL: avatarUrl } : {}) });
+  const profileUrl = autor.id ? `https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))}` : null;
+  embed.setAuthor({ name: nome, ...(avatarUrl ? { iconURL: avatarUrl } : {}), ...(profileUrl ? { url: profileUrl } : {}) });
   if (texto) embed.setDescription(texto);
 
   const imagem = listar(message.attachments)
@@ -133,6 +134,7 @@ function montarPayloadWebhook(message, info, replyTarget) {
   }
 
   const texto = message.content || '';
+  const embedMode = info && info.modoMensagem === 'embed';
   const nomeMascarado = String(nome).replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
   const linkUsuario = autor.id
     ? `[${nomeMascarado}](https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))})`
@@ -140,22 +142,25 @@ function montarPayloadWebhook(message, info, replyTarget) {
   const creditoDesenvolvedor = [DONO_ID, MUBI_ID].includes(String(autor.id))
     ? ' - Desenvolvedor do Global'
     : '';
-  const detalhes = [
+  const detalhes = embedMode ? '' : [
     info && info.nomeServidor ? `Enviado de: ${info.nomeServidor}` : '',
     linkUsuario ? `${linkUsuario}${creditoDesenvolvedor}` : ''
   ].filter(Boolean).join(' • ');
   const atribuicao = detalhes ? `-# ${detalhes}` : '';
   const content = [texto, atribuicao].filter(Boolean).join('\n\n');
-  const embedMode = info && info.modoMensagem === 'embed';
+  const globalAvatarUrl = client.user && typeof client.user.displayAvatarURL === 'function'
+    ? client.user.displayAvatarURL()
+    : null;
   const payload = {
-    username: nomeWebhook,
+    username: embedMode ? 'Global' : nomeWebhook,
     content: embedMode ? '' : content,
     allowedMentions: { parse: [] }
   };
 
   if (embedMode) payload.embeds = [montarEmbedMensagem(message, info, [texto, atribuicao].filter(Boolean).join('\n\n'))];
 
-  if (avatarUrl) payload.avatarUrl = avatarUrl;
+  const webhookAvatarUrl = embedMode ? globalAvatarUrl : avatarUrl;
+  if (webhookAvatarUrl) payload.avatarUrl = webhookAvatarUrl;
   if (files.length > 0) payload.files = files;
   if (replyTarget && replyTarget.channelId && replyTarget.messageId) {
     payload.replyTo = replyTarget;
