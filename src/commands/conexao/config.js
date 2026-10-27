@@ -5,7 +5,7 @@ const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { membroPodeGerenciarCanais } = require('../../services/permissoes');
 const { obterWebhook } = require('../../services/webhooks');
-const { ACOES_REACAO, textoPainel } = require('../../services/configPainel');
+const { ACOES_REACAO, embedPainel } = require('../../services/configPainel');
 
 const VALORES_LIGAR = ['on', 'ligar', 'ativar', 'sim', 'true'];
 const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'];
@@ -51,7 +51,7 @@ module.exports = {
     try {
       const atual = await Guild.findOne({ guildId }).lean();
       painel = await message.channel.send({
-        content: textoPainel(atual || {}),
+        embeds: [embedPainel({}, true)],
         allowedMentions: { parse: [] }
       });
 
@@ -61,9 +61,22 @@ module.exports = {
 
       await Guild.findOneAndUpdate(
         { guildId },
-        { $set: { configPainelMessageId: String(painel.id) } },
-        { upsert: true, new: true }
+        { $set: {
+          configPainelMessageId: String(painel.id),
+          configPainelUserId: String(message.author.id)
+        } },
+        { upsert: true }
       );
+      try {
+        await painel.edit({
+          embeds: [embedPainel(atual || {})],
+          allowedMentions: { parse: [] }
+        });
+      } catch (e) {
+        log.error('CONFIG', `Painel salvo, mas não foi possível exibir suas opções | ${descreverContexto(message)}`, e);
+        await message.reply('<:closecirclefill:1562606683371339786> O painel foi criado, mas não consegui carregar as opções. Execute o comando novamente para atualizar.');
+        return painel;
+      }
       log.ok('CONFIG', `Painel publicado | ${descreverContexto(message)}`);
       return painel;
     } catch (e) {
