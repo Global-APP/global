@@ -16,7 +16,9 @@ const ACOES_REACAO = Object.freeze({
 });
 
 function acaoDaReacao(emojiName) {
-  return ACOES_REACAO[emojiName] || null;
+  const normalizedEmoji = String(emojiName || '').replace(/\uFE0F/g, '');
+  const matchedEmoji = Object.keys(ACOES_REACAO).find((emoji) => emoji.replace(/\uFE0F/g, '') === normalizedEmoji);
+  return matchedEmoji ? ACOES_REACAO[matchedEmoji] : null;
 }
 
 function textoPainel(config = {}, feedback) {
@@ -62,18 +64,34 @@ async function tratarReacaoPainel(payload, deps = {}) {
     if (!message && payload.reaction && typeof payload.reaction.fetchMessage === 'function') {
       message = await payload.reaction.fetchMessage();
     }
-    if (!message) return false;
+    if (!message) {
+      api.log.warn('CONFIG', `Reação ignorada: mensagem ${payload.messageId || '?'} não está disponível no evento`);
+      return false;
+    }
 
     const messageGuildId = String(message.guildId || '');
     const guildId = String(payload.guildId || messageGuildId || '');
     const messageId = String(payload.messageId || message.id || '');
-    if (!guildId || !messageGuildId || guildId !== messageGuildId || !messageId) return false;
+    if (!guildId || !messageGuildId || guildId !== messageGuildId || !messageId) {
+      api.log.warn('CONFIG', `Reação ignorada: contexto inválido guild=${guildId || '?'} messageGuild=${messageGuildId || '?'} message=${messageId || '?'}`);
+      return false;
+    }
 
     const action = acaoDaReacao((payload.emoji && payload.emoji.name) || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name));
-    if (!action) return false;
+    if (!action) {
+      api.log.warn('CONFIG', `Reação ignorada: emoji não reconhecido (${JSON.stringify(payload.emoji && payload.emoji.name)})`);
+      return false;
+    }
 
     const guildConfig = await api.Guild.findOne({ guildId }).lean();
-    if (!guildConfig || String(guildConfig.configPainelMessageId) !== messageId) return false;
+    if (!guildConfig) {
+      api.log.warn('CONFIG', `Reação ignorada: não há configuração salva para guild ${guildId}`);
+      return false;
+    }
+    if (String(guildConfig.configPainelMessageId) !== messageId) {
+      api.log.warn('CONFIG', `Reação ignorada: painel ${messageId} não é o ativo; atual=${guildConfig.configPainelMessageId || 'nenhum'}`);
+      return false;
+    }
 
     api.log.info('CONFIG', `Reação recebida no painel ${messageId}: ${userId} ${payload.emoji && payload.emoji.name}`);
     if (!guildConfig.configPainelUserId || String(guildConfig.configPainelUserId) !== userId) {
@@ -103,7 +121,10 @@ async function tratarReacaoPainel(payload, deps = {}) {
 
     if (action === 'definirCanal') {
       const channel = message.channel || (typeof message.resolveChannel === 'function' ? await message.resolveChannel() : null);
-      if (!channel) return false;
+      if (!channel) {
+        api.log.warn('CONFIG', `Reação 📌 ignorada: canal do painel ${messageId} indisponível`);
+        return false;
+      }
       await api.obterWebhook(guildId, String(channel.id), channel);
       api.limparFalhasDestino(guildId);
     } else {
@@ -115,7 +136,10 @@ async function tratarReacaoPainel(payload, deps = {}) {
         { guildId, configPainelMessageId: messageId, configPainelUserId: userId },
         { $set: set }
       );
-      if (!result || result.matchedCount === 0) return false;
+      if (!result || result.matchedCount === 0) {
+        api.log.warn('CONFIG', `Reação ignorada: painel ${messageId} ou autor ${userId} deixou de ser ativo antes de salvar`);
+        return false;
+      }
     }
 
     const emojiName = (payload.emoji && payload.emoji.name)
