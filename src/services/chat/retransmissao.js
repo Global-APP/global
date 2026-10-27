@@ -95,7 +95,8 @@ async function retransmitirMensagemGlobal(message) {
     }
 
     const replyTarget = resolverAlvoReply(alvoReply, referenciaOriginal);
-    const payload = montarPayloadWebhook(message, info, replyTarget);
+    const infoDestino = await infoMensagem(message, destino);
+    const payload = montarPayloadWebhook(message, infoDestino, replyTarget);
     const webhook = await obterWebhook(destino.guildId, destino.canalId, canal);
     const { mensagem: enviada, comReply } = await enviarComReplyOuFallback(
       webhook,

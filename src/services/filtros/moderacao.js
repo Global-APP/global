@@ -14,7 +14,9 @@ async function configDaGuild(guildId) {
   const row = await Guild.findOne({ guildId: String(guildId) }).lean();
   return {
     filtrarPalavroes: !!(row && row.filtrarPalavroes),
-    filtrarLinks: !!(row && row.filtrarLinks)
+    filtrarLinks: !!(row && row.filtrarLinks),
+    modoMensagem: row && row.modoMensagem === 'embed' ? 'embed' : 'cru',
+    mostrarIcone: !!(row && row.mostrarIcone)
   };
 }
 

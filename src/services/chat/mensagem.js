@@ -28,7 +28,7 @@ function obterIconeServidor(guild) {
   return null;
 }
 
-async function infoMensagem(message) {
+async function infoMensagem(message, preferenciasExibicao) {
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
   const guild = message.guild || client.guilds.get(guildId);
   const autor = message.author || {};
@@ -42,10 +42,11 @@ async function infoMensagem(message) {
   if (String(autor.id) === DONO_ID) corEmbed = 0xC0B29D;
   else if (String(autor.id) === MUBI_ID) corEmbed = COR_EMBED_MUBI;
 
-  const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
+  const configExibicao = preferenciasExibicao || guildConfig;
+  const mostrarIcone = !configExibicao || configExibicao.mostrarIcone !== false;
   return {
     guildId,
-    modoMensagem: guildConfig && guildConfig.modoMensagem === 'embed' ? 'embed' : 'cru',
+    modoMensagem: configExibicao && configExibicao.modoMensagem === 'embed' ? 'embed' : 'cru',
     nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido',
     iconeServidor: mostrarIcone ? obterIconeServidor(guild) : null,
     corEmbed
