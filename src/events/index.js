@@ -17,7 +17,7 @@ function registrarLogReacao(tipo, payload, userId, emoji) {
   const messageId = payload.messageId || (payload.message && payload.message.id) || '?';
   const guildId = payload.guildId || (payload.message && payload.message.guildId) || '?';
   const channelId = payload.channelId || (payload.message && payload.message.channelId) || '?';
-  log.info('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emoji)} cachedMessage=${Boolean(payload.message)}`);
+  log.debug('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emoji)} cachedMessage=${Boolean(payload.message)}`);
 }
 
 function registrarEventos() {
@@ -39,6 +39,7 @@ function registrarEventos() {
   });
 
   client.on(Events.Ready, async () => {
+    log.debug('BOT', `Gateway READY; guilds em cache=${client.guilds.cache.size}`);
     const [canais, staffs] = await Promise.all([
       Guild.countDocuments({ canalId: { $ne: null } }),
       User.countDocuments({ staff: true })
