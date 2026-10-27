@@ -1,12 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const { PASTA_LOGS } = require('../config');
+const { DEBUG_MODE, PASTA_LOGS } = require('../config');
 
 const CORES_LOG = {
   INFO: '\x1b[36m',
   OK: '\x1b[32m',
   WARN: '\x1b[33m',
   ERROR: '\x1b[31m',
+  DEBUG: '\x1b[35m',
   RESET: '\x1b[0m',
   DIM: '\x1b[90m'
 };
@@ -37,7 +38,8 @@ const log = {
   info: (tag, msg) => escreverLog('INFO', tag, msg),
   ok: (tag, msg) => escreverLog('OK', tag, msg),
   warn: (tag, msg, det) => escreverLog('WARN', tag, msg, det),
-  error: (tag, msg, e) => escreverLog('ERROR', tag, e ? `${msg}: ${errMsg(e)}` : msg, e && e.stack ? e.stack : null)
+  error: (tag, msg, e) => escreverLog('ERROR', tag, e ? `${msg}: ${errMsg(e)}` : msg, e && e.stack ? e.stack : null),
+  debug: (tag, msg, det) => { if (DEBUG_MODE) escreverLog('DEBUG', tag, msg, det); }
 };
 
 function descreverContexto(message) {

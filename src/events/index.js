@@ -10,15 +10,25 @@ const { tratarComando } = require('../handlers/commandHandler');
 const { idDoServidor } = require('../util/ids');
 const { log, descreverContexto } = require('../util/logger');
 const { iniciarStatusRotativo } = require('../services/status');
-const { tratarReacaoPainel } = require('../services/configPainel');
+const { acaoDaReacao, tratarReacaoPainel } = require('../services/configPainel');
+
+function registrarLogReacao(tipo, payload, userId, emoji) {
+  if (!acaoDaReacao(emoji)) return;
+  const messageId = payload.messageId || (payload.message && payload.message.id) || '?';
+  const guildId = payload.guildId || (payload.message && payload.message.guildId) || '?';
+  const channelId = payload.channelId || (payload.message && payload.message.channelId) || '?';
+  log.debug('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emoji)} cachedMessage=${Boolean(payload.message)}`);
+}
 
 function registrarEventos() {
   client.on(Events.MessageReactionAdd, async (payload) => {
+    registrarLogReacao('MessageReactionAdd', payload, payload.userId || (payload.user && payload.user.id), payload.emoji && payload.emoji.name);
     await tratarReacaoPainel(payload);
   });
 
   client.on(Events.MessageReactionAddMany, async (payload) => {
     for (const reaction of payload.reactions || []) {
+      registrarLogReacao('MessageReactionAddMany', payload, reaction.userId, reaction.emoji && reaction.emoji.name);
       await tratarReacaoPainel({
         ...payload,
         userId: reaction.userId,
@@ -29,6 +39,7 @@ function registrarEventos() {
   });
 
   client.on(Events.Ready, async () => {
+    log.debug('BOT', `Gateway READY; guilds em cache=${client.guilds.cache.size}`);
     const [canais, staffs] = await Promise.all([
       Guild.countDocuments({ canalId: { $ne: null } }),
       User.countDocuments({ staff: true })

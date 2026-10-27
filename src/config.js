@@ -1,4 +1,5 @@
 const PREFIXO = process.env.PREFIXO?.trim() || 'g.';
+const DEBUG_MODE = process.argv.includes('--debug');
 
 const DONO_ID = '1561676586179100672';
 
@@ -98,6 +99,7 @@ const EMOJI_BLOQUEIO = [
 
 module.exports = {
   PREFIXO,
+  DEBUG_MODE,
   DONO_ID,
   MUBI_ID,
   COR_EMBED_MUBI,
