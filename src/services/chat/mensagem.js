@@ -10,19 +10,18 @@ function obterIconeServidor(guild) {
 
   if (typeof guild.iconURL === 'function') {
     try {
-      const url = guild.iconURL({ extension: 'gif', forceStatic: false, size: 128 }) || guild.iconURL();
-      if (url) return url;
+      const url = guild.iconURL({ extension: 'webp', forceStatic: true, size: 128 }) || guild.iconURL();
+      if (url) return String(url).replace(/\.(?:png|jpe?g|gif)(?=\?|$)/i, '.webp');
     } catch (_) {
       try {
         const url = guild.iconURL();
-        if (url) return url;
+        if (url) return String(url).replace(/\.(?:png|jpe?g|gif)(?=\?|$)/i, '.webp');
       } catch (_) {}
     }
   }
 
   if (guild.icon) {
-    const extension = String(guild.icon).startsWith('a_') ? 'gif' : 'png';
-    return `https://fluxerusercontent.com/icons/${guild.id}/${guild.icon}.${extension}?size=128`;
+    return `https://fluxerusercontent.com/icons/${guild.id}/${guild.icon}.webp`;
   }
 
   return null;
