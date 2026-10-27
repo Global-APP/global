@@ -49,7 +49,7 @@ async function sincronizarEdicao(antiga, nova) {
     }
   }
 
-  const payload = montarPayloadEdicao(completa);
+  const payload = montarPayloadEdicao(completa, info);
   const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
 
   const resultados = await Promise.allSettled(copias.map(async (c) => {

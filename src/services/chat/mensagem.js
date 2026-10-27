@@ -1,12 +1,53 @@
+const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { DONO_ID, MUBI_ID } = require('../../config');
+const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
+const Guild = require('../../models/Guild');
+const User = require('../../models/User');
+const { corDaBadge } = require('../badges');
+
+function obterIconeServidor(guild) {
+  if (!guild) return null;
+
+  if (typeof guild.iconURL === 'function') {
+    try {
+      const url = guild.iconURL({ extension: 'gif', forceStatic: false, size: 128 }) || guild.iconURL();
+      if (url) return url;
+    } catch (_) {
+      try {
+        const url = guild.iconURL();
+        if (url) return url;
+      } catch (_) {}
+    }
+  }
+
+  if (guild.icon) {
+    const extension = String(guild.icon).startsWith('a_') ? 'gif' : 'png';
+    return `https://fluxerusercontent.com/icons/${guild.id}/${guild.icon}.${extension}?size=128`;
+  }
+
+  return null;
+}
 
 async function infoMensagem(message) {
   const guildId = String(message.guildId || (message.guild ? message.guild.id : '0'));
   const guild = message.guild || client.guilds.get(guildId);
+  const autor = message.author || {};
+  const [guildConfig, usuario] = await Promise.all([
+    Guild.findOne({ guildId }).lean(),
+    User.findOne({ userId: String(autor.id) }).select('staff badges selectedBadge').lean()
+  ]);
+  const corGuild = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
+  let corEmbed = corDaBadge(usuario) ?? corGuild;
+
+  if (String(autor.id) === DONO_ID) corEmbed = 0xC0B29D;
+  else if (String(autor.id) === MUBI_ID) corEmbed = COR_EMBED_MUBI;
+
+  const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
   return {
     guildId,
-    nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido'
+    nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido',
+    iconeServidor: mostrarIcone ? obterIconeServidor(guild) : null,
+    corEmbed
   };
 }
 
@@ -27,6 +68,15 @@ function nomeDaFigurinha(figurinha, indice) {
     // Usa o nome genérico abaixo para URL incomum.
   }
   return `figurinha-${indice + 1}.png`;
+}
+
+function montarEmbedContexto(info) {
+  return new EmbedBuilder()
+    .setColor(info && info.corEmbed != null ? info.corEmbed : 0x0B0B0B)
+    .setFooter({
+      text: info && info.nomeServidor ? info.nomeServidor : 'Servidor Desconhecido',
+      ...(info && info.iconeServidor ? { iconURL: info.iconeServidor } : {})
+    });
 }
 
 /**
@@ -78,6 +128,7 @@ function montarPayloadWebhook(message, info, replyTarget) {
   const payload = {
     username: nomeWebhook,
     content,
+    embeds: [montarEmbedContexto(info)],
     allowedMentions: { parse: [] }
   };
 
@@ -91,10 +142,10 @@ function montarPayloadWebhook(message, info, replyTarget) {
   return payload;
 }
 
-function montarPayloadEdicao(message) {
+function montarPayloadEdicao(message, info) {
   return {
     content: message.content || '',
-    embeds: [],
+    embeds: [montarEmbedContexto(info)],
     allowedMentions: { parse: [] }
   };
 }
