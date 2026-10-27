@@ -102,16 +102,24 @@ async function tratarReacaoPainel(payload, deps = {}) {
 
     if (!api.ehDev(userId)) {
       const canResolveGuild = typeof message.resolveGuild === 'function';
+      const guildFromPayload = payload.reaction?.guild || payload.channel?.guild
+        || (api.client.guilds && api.client.guilds.get(guildId));
+      const payloadMember = payload.member || null;
       const actorMessage = {
         author: user,
         resolveGuild: async () => {
-          if (canResolveGuild) return message.resolveGuild();
-          const member = payload.member || null;
-          if (!member) return null;
-          return {
-            members: { get: (id) => id === userId ? member : null },
-            fetchMember: async () => member
-          };
+          if (canResolveGuild) {
+            const guild = await message.resolveGuild();
+            if (guild) return guild;
+          }
+          if (guildFromPayload) return guildFromPayload;
+          if (payloadMember) {
+            return {
+              members: { get: (id) => id === userId ? payloadMember : null },
+              fetchMember: async () => payloadMember
+            };
+          }
+          return null;
         }
       };
       if (!(await api.membroPodeGerenciarCanais(actorMessage))) {
