@@ -18,15 +18,18 @@ module.exports = {
     }
 
     let latenciaGateway = null;
+    let heartbeatPendente = false;
     try {
       const ping = client.ws.ping;
       if (Number.isFinite(ping) && ping >= 0) latenciaGateway = ping;
+      else if (ping === -1) heartbeatPendente = true;
     } catch (_) {
       // The gateway may not be connected yet.
     }
 
     const apiTexto = latenciaApi === null ? 'indisponível' : `${latenciaApi} ms`;
-    const gatewayTexto = latenciaGateway === null ? 'indisponível' : `${latenciaGateway} ms`;
-    await message.reply(`<:checkboxcirclefill:1562606683371339777> API: **${apiTexto}** · Gateway: **${gatewayTexto}**`);
+    const gatewayTexto = latenciaGateway !== null ? `${latenciaGateway} ms`
+      : heartbeatPendente ? 'aguardando heartbeat' : 'indisponível';
+    await message.reply(`🏓 Pong! · API: **${apiTexto}** · Gateway: **${gatewayTexto}**`);
   }
 };
