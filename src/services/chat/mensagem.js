@@ -5,6 +5,8 @@ const Guild = require('../../models/Guild');
 const User = require('../../models/User');
 const { corDaBadge } = require('../badges');
 
+const AVATAR_WEBHOOK_GLOBAL = 'https://fluxerusercontent.com/avatars/1562253521942745089/152b6f43.webp?size=240';
+
 function obterIconeServidor(guild) {
   if (!guild) return null;
 
@@ -91,7 +93,8 @@ function montarEmbedMensagem(message, info, texto) {
   const avatarUrl = typeof autor.displayAvatarURL === 'function' ? autor.displayAvatarURL() : null;
 
   const profileUrl = autor.id ? `https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))}` : null;
-  embed.setAuthor({ name: nome, ...(avatarUrl ? { iconURL: avatarUrl } : {}), ...(profileUrl ? { url: profileUrl } : {}) });
+  const nomeAutorEmbed = autor.username ? `${nome} (@${autor.username})` : nome;
+  embed.setAuthor({ name: nomeAutorEmbed, ...(avatarUrl ? { iconURL: avatarUrl } : {}), ...(profileUrl ? { url: profileUrl } : {}) });
   if (texto) embed.setDescription(texto);
 
   const imagem = listar(message.attachments)
@@ -147,9 +150,6 @@ function montarPayloadWebhook(message, info, replyTarget) {
   ].filter(Boolean).join(' • ');
   const atribuicao = detalhes ? `-# ${detalhes}` : '';
   const content = [texto, atribuicao].filter(Boolean).join('\n\n');
-  const globalAvatarUrl = client.user && typeof client.user.displayAvatarURL === 'function'
-    ? client.user.displayAvatarURL()
-    : null;
   const payload = {
     username: embedMode ? 'Global' : nomeWebhook,
     content: embedMode ? '' : content,
@@ -158,7 +158,7 @@ function montarPayloadWebhook(message, info, replyTarget) {
 
   if (embedMode) payload.embeds = [montarEmbedMensagem(message, info, [texto, atribuicao].filter(Boolean).join('\n\n'))];
 
-  const webhookAvatarUrl = embedMode ? globalAvatarUrl : avatarUrl;
+  const webhookAvatarUrl = embedMode ? AVATAR_WEBHOOK_GLOBAL : avatarUrl;
   if (webhookAvatarUrl) payload.avatarUrl = webhookAvatarUrl;
   if (files.length > 0) payload.files = files;
   if (replyTarget && replyTarget.channelId && replyTarget.messageId) {
