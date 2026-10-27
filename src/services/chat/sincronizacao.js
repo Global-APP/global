@@ -49,11 +49,11 @@ async function sincronizarEdicao(antiga, nova) {
     }
   }
 
-  const payload = montarPayloadEdicao(completa, info);
   const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
 
   const resultados = await Promise.allSettled(copias.map(async (c) => {
-    if (motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
+    const configDestino = await configDaGuild(c.guildId);
+    if (motivoFiltroGuild(analise, configDestino)) {
       const apagadaWebhook = await apagarMensagemWebhook(c.guildId, c.canalId, c.msgId);
       if (apagadaWebhook === null) {
         const canal = await client.channels.fetch(c.canalId);
@@ -63,6 +63,8 @@ async function sincronizarEdicao(antiga, nova) {
       return 'removida';
     }
 
+    const infoDestino = await infoMensagem(completa, configDestino);
+    const payload = montarPayloadEdicao(completa, infoDestino);
     const editadaWebhook = await editarMensagemWebhook(c.guildId, c.canalId, c.msgId, payload);
     if (editadaWebhook !== null) return 'editada';
 
