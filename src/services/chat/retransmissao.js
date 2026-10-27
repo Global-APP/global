@@ -12,6 +12,7 @@ const { ehStaffOuDono, estaBloqueado } = require('../permissoes');
 const { reagir } = require('../../util/reacoes');
 const { reagirPorFalhaEnvio } = require('./falha');
 const { obterWebhook } = require('../webhooks');
+const { verificarConversador } = require('../badges');
 const { infoMensagem, montarPayloadWebhook } = require('./mensagem');
 const { resolverAlvoReply, enviarComReplyOuFallback } = require('./reply');
 
@@ -148,6 +149,12 @@ async function retransmitirMensagemGlobal(message) {
     } catch (e) {
       log.error('DB', 'Erro ao registrar vínculos de mensagens', e);
     }
+  }
+
+  try {
+    await verificarConversador(autor.id);
+  } catch (e) {
+    log.error('BADGE', `Falha ao verificar badge Conversador de ${autor.id}`, e);
   }
 
   await Promise.allSettled(tratamentos);
