@@ -1,4 +1,5 @@
 const Bloqueio = require('../../models/Bloqueio');
+const { PREFIXO } = require('../../config');
 const { extrairId } = require('../../util/ids');
 const { log } = require('../../util/logger');
 const { tipoBloqueio, negarSeNaoStaff } = require('./_comum');
@@ -14,16 +15,16 @@ module.exports = {
     const tipo = tipoBloqueio(args[0]);
     const alvoId = extrairId(args[1]);
     if (!tipo || !alvoId) {
-      await message.reply('<:information2fill:1562606683371339784> Uso correto: `g.unban usuario <@usuario|ID>` ou `g.unban servidor <ID>`');
+      await message.channel.send(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}unban usuario <@usuario|ID>\` ou \`${PREFIXO}unban servidor <ID>\``);
       return;
     }
 
     const r = await Bloqueio.deleteOne({ tipo, id: alvoId });
     if (r.deletedCount > 0) {
       log.ok('UNBAN', `${tipo} ${alvoId} desbloqueado por ${message.author.id}`);
-      await message.reply(`<:checkboxcirclefill:1562606683371339777> ${tipo === 'usuario' ? `Usuário <@${alvoId}>` : `Servidor \`${alvoId}\``} foi **desbloqueado**.`);
+      await message.channel.send(`<:checkboxcirclefill:1562606683371339777> ${tipo === 'usuario' ? `Usuário <@${alvoId}>` : `Servidor \`${alvoId}\``} foi **desbloqueado**.`);
     } else {
-      await message.reply('<:information2fill:1562606683371339784> Esse alvo não está bloqueado.');
+      await message.channel.send('<:information2fill:1562606683371339784> Esse alvo não está bloqueado.');
     }
   }
 };

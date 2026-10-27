@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
-const { DONO_ID } = require('../../config');
+const { DONO_ID, PREFIXO } = require('../../config');
 const { ehStaffOuDono } = require('../../services/permissoes');
 
 module.exports = {
@@ -15,33 +15,33 @@ module.exports = {
     const restrito = (nome, valor) => ({ nome, valor, emoji: '<:toggleline:1562606683371339782>' });
 
     const comandos = [
-      publico('g.ping/status', 'Mostra a latência do Global.'),
-      publico('g.help/ajuda', 'Mostra todos os comandos do Global.'),
-      publico('g.config', 'No canal que é executado, seta a conexão Global.'),
-      publico('g.desconectar', 'Desconecta este servidor do chat global.'),
-      publico('g.pausar/retomar', 'Pausa ou retoma o chat global neste servidor.'),
-      publico('g.automod', 'Escolhe se este servidor filtra palavrões e links (padrão: liberados).'),
-      publico('g.report', 'Responda a uma mensagem do global com g.report [motivo] para denunciá-la.'),
-      publico('g.perfil/profile', 'Mostra o card de perfil seu ou de outro usuário.'),
-      publico('g.destacar', 'Escolhe a badge em destaque no perfil e na cor das suas mensagens.'),
-      publico('g.botinfo/global', 'Envia as informações principais do Global.')
+      publico(`${PREFIXO}ping/status`, 'Mostra a latência do Global.'),
+      publico(`${PREFIXO}help/ajuda`, 'Mostra todos os comandos do Global.'),
+      publico(`${PREFIXO}config`, 'No canal que é executado, seta a conexão Global.'),
+      publico(`${PREFIXO}desconectar`, 'Desconecta este servidor do chat global.'),
+      publico(`${PREFIXO}pausar/retomar`, 'Pausa ou retoma o chat global neste servidor.'),
+      publico(`${PREFIXO}automod`, 'Escolhe se este servidor filtra palavrões e links (padrão: liberados).'),
+      publico(`${PREFIXO}report`, `Responda a uma mensagem do global com ${PREFIXO}report [motivo] para denunciá-la.`),
+      publico(`${PREFIXO}perfil/profile`, 'Mostra o card de perfil seu ou de outro usuário.'),
+      publico(`${PREFIXO}destacar`, 'Escolhe a badge em destaque no perfil e na cor das suas mensagens.'),
+      publico(`${PREFIXO}botinfo/global`, 'Envia as informações principais do Global.')
     ];
 
     if (staff) {
       comandos.push(
-        restrito('g.ban/unban', 'Bloqueia ou desbloqueia um usuário ou servidor do global.'),
-        restrito('g.bloqueios', 'Lista usuários e servidores bloqueados.'),
-        restrito('g.filtro', 'Gerencia o filtro (add/remove/liberar/testar/recarregar/list).'),
-        restrito('g.badge', 'Concede, remove ou lista as badges de um usuário.'),
-        restrito('g.servidores', 'Lista os servidores conectados ao global.')
+        restrito(`${PREFIXO}ban/unban`, 'Bloqueia ou desbloqueia um usuário ou servidor do global.'),
+        restrito(`${PREFIXO}bloqueios`, 'Lista usuários e servidores bloqueados.'),
+        restrito(`${PREFIXO}filtro`, 'Gerencia o filtro (add/remove/liberar/testar/recarregar/list).'),
+        restrito(`${PREFIXO}badge`, 'Concede, remove ou lista as badges de um usuário.'),
+        restrito(`${PREFIXO}servidores`, 'Lista os servidores conectados ao global.')
       );
     }
 
     if (dono) {
       comandos.push(
-        restrito('g.servercolor', 'Troca a cor da mensagem dos membros em um servidor específico.'),
-        restrito('g.up/down', 'Promove um usuário para staff, e remove de um membro do staff.'),
-        restrito('g.anuncio', 'Cria ou agenda um anúncio global.')
+        restrito(`${PREFIXO}servercolor`, 'Troca a cor da mensagem dos membros em um servidor específico.'),
+        restrito(`${PREFIXO}up/down`, 'Promove um usuário para staff, e remove de um membro do staff.'),
+        restrito(`${PREFIXO}anuncio`, 'Cria ou agenda um anúncio global.')
       );
     }
 
@@ -52,9 +52,9 @@ module.exports = {
         .setColor(0x0330EF)
         .addFields(...comandos.map((c) => ({ name: `${c.emoji} ${c.nome}`, value: c.valor, inline: true })));
 
-      await message.reply({ embeds: [embedAjuda] });
+      await message.channel.send({ embeds: [embedAjuda] });
     } catch (e) {
-      await message.reply(
+      await message.channel.send(
         '<:information2fill:1562606683371339784> **Comandos do Global**\n\n' +
         comandos.map((c) => `• \`${c.nome}\` — ${c.valor}`).join('\n')
       );

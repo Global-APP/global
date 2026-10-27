@@ -1,9 +1,10 @@
-const { DONO_ID } = require('../../config');
+const { DONO_ID, PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { membroPodeGerenciarCanais } = require('../../services/permissoes');
+const { obterWebhook } = require('../../services/webhooks');
 
 const VALORES_LIGAR = ['on', 'ligar', 'ativar', 'sim', 'true'];
 const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'];
@@ -36,7 +37,7 @@ module.exports = {
     if (sub) {
       await message.reply(
         '<:closecirclefill:1562606683371339786> Subcomando inválido.\n' +
-        '-# Use `g.config` para definir o canal ou `g.config servericon [on|off]` para o ícone do servidor.'
+        `-# Use \`${PREFIXO}config\` para definir o canal ou \`${PREFIXO}config servericon [on|off]\` para o ícone do servidor.`
       );
       return;
     }
@@ -46,13 +47,22 @@ module.exports = {
 
   async definirCanal(message, gId) {
     const anterior = await Guild.findOne({ guildId: gId, canalId: { $ne: null } }).lean();
-    await Guild.findOneAndUpdate({ guildId: gId }, { canalId: String(message.channel.id) }, { upsert: true });
+    try {
+      await obterWebhook(gId, String(message.channel.id), message.channel);
+    } catch (e) {
+      log.error('CONFIG', `Falha ao criar webhook em ${descreverContexto(message)}`, e);
+      await message.channel.send(
+        '<:closecirclefill:1562606683371339786> Não consegui criar a webhook neste canal. Confira se o bot tem a permissão **Gerenciar Webhooks** e tente novamente.'
+      );
+      return;
+    }
+
     limparFalhasDestino(gId);
     log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canalId} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
 
     await message.reply(
       `<:checkboxcirclefill:1562606683371339777> O canal <#${message.channel.id}> foi definido com sucesso como a \`Conexão Global\`.\n` +
-      '-# Execute g.config no canal que **você quer definir** a conexão global.'
+      `-# Execute ${PREFIXO}config no canal que **você quer definir** a conexão global.`
     );
   },
 
@@ -71,7 +81,7 @@ module.exports = {
     } else {
       await message.reply(
         '<:closecirclefill:1562606683371339786> Opção inválida.\n' +
-        '-# Use `g.config servericon on`, `g.config servericon off` ou só `g.config servericon` para alternar.'
+        `-# Use \`${PREFIXO}config servericon on\`, \`${PREFIXO}config servericon off\` ou só \`${PREFIXO}config servericon\` para alternar.`
       );
       return;
     }

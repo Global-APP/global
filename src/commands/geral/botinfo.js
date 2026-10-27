@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
-const { DONO_ID, MUBI_ID } = require('../../config');
+const { DONO_ID, MUBI_ID, PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 
@@ -24,7 +24,7 @@ module.exports = {
         .addFields(
           { name: '<:information2fill:1562606683371339784> Desenvolvedor', value: `<@${DONO_ID}> (\`xMqR\`)\n<@${MUBI_ID}> (\`Mubi\`)`, inline: true },
           { name: '<:brushaifill:1562606683371339785> Estatísticas:', value: `**${totalServidores}** Servidores\n**${totalUsuarios}+** Usuários ativos`, inline: true },
-          { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: '• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** `@fluxerjs/core`\n• **Banco de dados:** MongoDB\n• **Prefixo:** `g.`\n• **Status:** Operacional', inline: false }
+          { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: `• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** \`@fluxerjs/core\`\n• **Banco de dados:** MongoDB\n• **Prefixo:** \`${PREFIXO}\`\n• **Status:** Operacional`, inline: false }
         );
 
       await message.reply({ embeds: [embedInfo] });
@@ -35,7 +35,7 @@ module.exports = {
         `• **Servidores Conectados:** ${totalServidores}\n` +
         `• **Usuários Ativos:** ${totalUsuarios}+\n` +
         `• **Linguagem/Biblioteca:** Node.js / @fluxerjs/core\n` +
-        `• **Prefixo:** \`g.\``
+        `• **Prefixo:** \`${PREFIXO}\``
       );
     }
   }
