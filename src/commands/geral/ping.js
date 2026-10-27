@@ -1,4 +1,32 @@
 const { client: clientePadrao } = require('../../lib/client');
+const { EmbedBuilder } = require('@fluxerjs/core');
+
+const AVATAR_GLOBAL = 'https://fluxerusercontent.com/avatars/1562253521942745089/152b6f43.webp';
+
+function embedPing(latenciaApi, latenciaGateway) {
+  const embed = new EmbedBuilder();
+  embed.setTitle('🏓 Pong!');
+  embed.setThumbnail(AVATAR_GLOBAL);
+  embed.addFields(
+    { name: 'API', value: latenciaApi === null ? 'Indisponível' : `${latenciaApi} ms`, inline: true },
+    { name: 'Gateway', value: latenciaGateway === null ? 'Indisponível' : typeof latenciaGateway === 'number' ? `${latenciaGateway} ms` : latenciaGateway, inline: true }
+  );
+  return embed;
+}
+
+async function aguardarPingGateway(client, timeoutMs = 60_000, intervaloMs = 500) {
+  const limite = Date.now() + timeoutMs;
+  while (Date.now() < limite) {
+    await new Promise((resolve) => setTimeout(resolve, intervaloMs));
+    try {
+      const ping = client.ws.ping;
+      if (Number.isFinite(ping) && ping >= 0) return ping;
+    } catch (_) {
+      return null;
+    }
+  }
+  return null;
+}
 
 module.exports = {
   name: 'ping',
@@ -27,9 +55,18 @@ module.exports = {
       // The gateway may not be connected yet.
     }
 
-    const apiTexto = latenciaApi === null ? 'indisponível' : `${latenciaApi} ms`;
-    const gatewayTexto = latenciaGateway !== null ? `${latenciaGateway} ms`
-      : heartbeatPendente ? 'aguardando heartbeat' : 'indisponível';
-    await message.reply(`🏓 Pong! · API: **${apiTexto}** · Gateway: **${gatewayTexto}**`);
+    let gateway = latenciaGateway !== null ? latenciaGateway
+      : heartbeatPendente ? 'Aguardando heartbeat' : null;
+    const resposta = await message.reply({ embeds: [embedPing(latenciaApi, gateway)] });
+    if (heartbeatPendente) {
+      const aguardar = deps.waitForGatewayPing || aguardarPingGateway;
+      const pingAtualizado = await aguardar(client);
+      gateway = Number.isFinite(pingAtualizado) && pingAtualizado >= 0
+        ? pingAtualizado
+        : 'Sem resposta após aguardar';
+      if (resposta && typeof resposta.edit === 'function') {
+        await resposta.edit({ embeds: [embedPing(latenciaApi, gateway)] });
+      }
+    }
   }
 };
