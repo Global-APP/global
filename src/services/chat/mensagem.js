@@ -1,9 +1,9 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
+const { DONO_ID, MUBI_ID, COR_EMBED_MUBI, ROTULO_BADGE } = require('../../config');
 const Guild = require('../../models/Guild');
 const User = require('../../models/User');
-const { corDaBadge } = require('../badges');
+const { corDaBadge, badgeAtiva } = require('../badges');
 
 const AVATAR_WEBHOOK_GLOBAL = 'https://fluxerusercontent.com/avatars/1562253521942745089/152b6f43.webp?size=240';
 
@@ -37,6 +37,7 @@ async function infoMensagem(message, preferenciasExibicao) {
     Guild.findOne({ guildId }).lean(),
     User.findOne({ userId: String(autor.id) }).select('staff badges selectedBadge').lean()
   ]);
+  const badge = badgeAtiva(usuario);
   const corGuild = guildConfig && guildConfig.cor != null ? guildConfig.cor : 0x0B0B0B;
   let corEmbed = corDaBadge(usuario) ?? corGuild;
 
@@ -50,7 +51,8 @@ async function infoMensagem(message, preferenciasExibicao) {
     modoMensagem: configExibicao && configExibicao.modoMensagem === 'cru' ? 'cru' : 'embed',
     nomeServidor: guild && guild.name ? guild.name : 'Servidor Desconhecido',
     iconeServidor: mostrarIcone ? obterIconeServidor(guild) : null,
-    corEmbed
+    corEmbed,
+    badge
   };
 }
 
@@ -224,7 +226,8 @@ function montarEmbedMensagem(message, info, texto) {
   const creditoDesenvolvedor = [DONO_ID, MUBI_ID].includes(String(autor.id))
     ? ' - Desenvolvedor do Global'
     : '';
-  const nomeAutorEmbed = `${autor.username ? `${nome} (@${autor.username})` : nome}${creditoDesenvolvedor}`;
+  const rotuloBadge = info && info.badge && ROTULO_BADGE[info.badge] ? ` - ${ROTULO_BADGE[info.badge]}` : '';
+  const nomeAutorEmbed = `${autor.username ? `${nome} (@${autor.username})` : nome}${creditoDesenvolvedor || rotuloBadge}`;
   embed.setAuthor({ name: nomeAutorEmbed, ...(avatarUrl ? { iconURL: avatarUrl } : {}), ...(profileUrl ? { url: profileUrl } : {}) });
   if (texto) embed.setDescription(texto);
 
