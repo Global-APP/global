@@ -17,18 +17,19 @@ function registrarLogReacao(tipo, payload, userId, emoji) {
   const messageId = payload.messageId || (payload.message && payload.message.id) || '?';
   const guildId = payload.guildId || (payload.reaction && payload.reaction.guildId) || (payload.message && payload.message.guildId) || (payload.channel && payload.channel.guildId) || '?';
   const channelId = payload.channelId || (payload.message && payload.message.channelId) || '?';
-  log.debug('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emoji)} cachedMessage=${Boolean(payload.message)}`);
+    const emojiLabel = emoji && typeof emoji === 'object' ? emoji.name : emoji;
+    log.debug('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emojiLabel)} cachedMessage=${Boolean(payload.message)}`);
 }
 
 function registrarEventos() {
   client.on(Events.MessageReactionAdd, async (payload) => {
-    registrarLogReacao('MessageReactionAdd', payload, payload.userId || (payload.user && payload.user.id), payload.emoji && payload.emoji.name);
+    registrarLogReacao('MessageReactionAdd', payload, payload.userId || (payload.user && payload.user.id), payload.emoji);
     await tratarReacaoPainel(payload);
   });
 
   client.on(Events.MessageReactionAddMany, async (payload) => {
     for (const reaction of payload.reactions || []) {
-      registrarLogReacao('MessageReactionAddMany', payload, reaction.userId, reaction.emoji && reaction.emoji.name);
+      registrarLogReacao('MessageReactionAddMany', payload, reaction.userId, reaction.emoji);
       await tratarReacaoPainel({
         ...payload,
         userId: reaction.userId,

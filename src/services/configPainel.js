@@ -12,18 +12,51 @@ const { obterWebhook, removerWebhooksAnteriores } = require('./webhooks');
 const { limparFalhasDestino } = require('./destinos');
 const { log } = require('../util/logger');
 
+const EMOJI_MODO_EMBED = '🖼️';
+const EMOJI_MODO_NORMAL = '📝';
+const EMOJI_EXIBIR_ICONE = '<:imagefill:1564798265130487813>';
+const EMOJI_OCULTAR_ICONE = '🚫';
+const EMOJI_CONECTAR_CANAL = '📌';
+
 const ACOES_REACAO = Object.freeze({
-  '🖼️': 'embed',
-  '📝': 'cru',
-  '🌄': 'mostrarIcone',
-  '🚫': 'ocultarIcone',
-  '📌': 'definirCanal'
+  [EMOJI_MODO_EMBED]: 'embed',
+  [EMOJI_MODO_NORMAL]: 'cru',
+  [EMOJI_EXIBIR_ICONE]: 'mostrarIcone',
+  [EMOJI_OCULTAR_ICONE]: 'ocultarIcone',
+  [EMOJI_CONECTAR_CANAL]: 'definirCanal'
 });
 
 function acaoDaReacao(emojiName) {
+  if (typeof emojiName === 'string' && Object.hasOwn(ACOES_REACAO, emojiName)) {
+    return ACOES_REACAO[emojiName];
+  }
+  if (emojiName && typeof emojiName === 'object') {
+    if (emojiName.id) {
+      const match = Object.entries(ACOES_REACAO).find(([emoji]) => {
+        const customMatch = emoji.match(/^<a?:[^:]+:(\d+)>$/);
+        return customMatch && String(emojiName.id) === customMatch[1];
+      });
+      if (match) return match[1];
+    }
+    emojiName = emojiName.name;
+  }
   const normalizedEmoji = String(emojiName || '').replace(/\uFE0F/g, '');
-  const matchedEmoji = Object.keys(ACOES_REACAO).find((emoji) => emoji.replace(/\uFE0F/g, '') === normalizedEmoji);
+  const matchedEmoji = Object.keys(ACOES_REACAO).find((emoji) => {
+    const customMatch = emoji.match(/^<a?:[^:]+:(\d+)>$/);
+    if (customMatch) return false;
+    return emoji.replace(/\uFE0F/g, '') === normalizedEmoji;
+  });
   return matchedEmoji ? ACOES_REACAO[matchedEmoji] : null;
+}
+
+function emojiParaAPI(emoji) {
+  const match = emoji.match(/^<a?:([^:]+):(\d+)>$/);
+  return match ? `${match[1]}:${match[2]}` : emoji;
+}
+
+function emojiDaAcaoParaAPI(action) {
+  const emoji = Object.entries(ACOES_REACAO).find(([, acao]) => acao === action)?.[0];
+  return emoji ? emojiParaAPI(emoji) : null;
 }
 
 function podeConectarCanal(config = {}, canalPainelId) {
@@ -42,7 +75,7 @@ function textoPainel(config = {}, feedback, canalPainelId) {
     `<:information2fill:1562606683371339784> Conexão global: **${canal}**`,
     '',
     '<:brushaifill:1562606683371339785> Reaja para escolher uma opção.',
-    `🖼️ Embed · 📝 Normal${modoEmbed ? ' · 🌄 Exibir ícone · 🚫 Ocultar ícone' : ''}${podeConectarCanal(config, canalPainelId) ? ' · 📌 Conectar este canal' : ''}`,
+    `${EMOJI_MODO_EMBED} Embed · ${EMOJI_MODO_NORMAL} Normal${modoEmbed ? ` · ${EMOJI_EXIBIR_ICONE} Exibir ícone · ${EMOJI_OCULTAR_ICONE} Ocultar ícone` : ''}${podeConectarCanal(config, canalPainelId) ? ` · ${EMOJI_CONECTAR_CANAL} Conectar este canal` : ''}`,
     ...(feedback ? ['', feedback.startsWith('<:errorwarningfill:1563362758655746048>') ? feedback : `<:checkboxcirclefill:1562606683371339777> ${feedback}`] : [])
   ].join('\n');
 }
@@ -51,14 +84,14 @@ function reacoesDoPainel(config = {}, canalPainelId) {
   const modoEmbed = config.modoMensagem !== 'cru';
   return Object.entries(ACOES_REACAO)
     .filter(([emoji, action]) => (modoEmbed || (action !== 'mostrarIcone' && action !== 'ocultarIcone'))
-      && (emoji !== '📌' || podeConectarCanal(config, canalPainelId)))
+      && (emoji !== EMOJI_CONECTAR_CANAL || podeConectarCanal(config, canalPainelId)))
     .map(([emoji]) => emoji);
 }
 
 async function sincronizarReacoesIcone(message, modoMensagem, clientId, apiLog = log) {
   if (modoMensagem === 'cru') {
     if (typeof message.removeReaction !== 'function' || !clientId) return;
-    for (const emoji of ['🌄', '🚫']) {
+    for (const emoji of [emojiParaAPI(EMOJI_EXIBIR_ICONE), emojiParaAPI(EMOJI_OCULTAR_ICONE)]) {
       try {
         await message.removeReaction(emoji, clientId);
       } catch (error) {
@@ -69,7 +102,7 @@ async function sincronizarReacoesIcone(message, modoMensagem, clientId, apiLog =
   }
 
   if (typeof message.react !== 'function') return;
-  for (const emoji of ['🌄', '🚫']) {
+  for (const emoji of [emojiParaAPI(EMOJI_EXIBIR_ICONE), emojiParaAPI(EMOJI_OCULTAR_ICONE)]) {
     try {
       await message.react(emoji);
     } catch (error) {
@@ -82,7 +115,7 @@ async function sincronizarReacaoConexao(message, config, clientId, apiLog = log)
   const canalId = String(message.channelId || (message.channel && message.channel.id) || '');
   if (podeConectarCanal(config, canalId)) return;
   try {
-    if (typeof message.removeReaction === 'function' && clientId) await message.removeReaction('📌', clientId);
+    if (typeof message.removeReaction === 'function' && clientId) await message.removeReaction(emojiParaAPI(EMOJI_CONECTAR_CANAL), clientId);
   } catch (error) {
     apiLog.error('CONFIG', `Não foi possível ocultar a reação 📌 no canal ${canalId || '?'}`, error);
   }
@@ -146,7 +179,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
       return false;
     }
 
-    const action = acaoDaReacao((payload.emoji && payload.emoji.name) || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name));
+    const action = acaoDaReacao(payload.emoji || (payload.reaction && payload.reaction.emoji));
     if (!action) {
       api.log.debug('CONFIG', `Reação ignorada: emoji não reconhecido (${JSON.stringify(payload.emoji && payload.emoji.name)})`);
       return false;
@@ -220,8 +253,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
     }
     if (faltando.length > 0) {
       api.log.warn('CONFIG', `Ação ${action} recusada por permissões insuficientes do bot | guild=${guildId} channel=${contextoChannelId} panel=${messageId}: ${faltando.join(', ')}`);
-      const emojiName = (payload.emoji && payload.emoji.name)
-        || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name);
+      const emojiName = emojiDaAcaoParaAPI(action);
       try {
         if (emojiName && !faltando.includes('Gerenciar mensagens')) await message.removeReaction(emojiName, userId);
       } catch (error) {
@@ -247,7 +279,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
     if (action === 'definirCanal') {
       if (mesmoCanalConfigurado) {
         try {
-          await message.removeReaction('📌', userId);
+          await message.removeReaction(emojiParaAPI(EMOJI_CONECTAR_CANAL), userId);
           await sincronizarReacaoConexao(message, guildConfig, api.client.user && String(api.client.user.id), api.log);
           await message.edit({
             embeds: [embedPainel(guildConfig, false, 'Este canal já está configurado como Conexão Global.', contextoChannelId)],
@@ -260,7 +292,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
       }
       const channel = message.channel || (typeof message.resolveChannel === 'function' ? await message.resolveChannel() : null);
       if (!channel) {
-        api.log.debug('CONFIG', `Reação 📌 ignorada: canal do painel ${messageId} indisponível`);
+        api.log.debug('CONFIG', `Reação ${EMOJI_CONECTAR_CANAL} ignorada: canal do painel ${messageId} indisponível`);
         return false;
       }
       contextoChannelId = String(channel.id);
@@ -288,9 +320,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
         if (!ehLimiteWebhooks(error)) throw error;
 
         api.log.error('CONFIG', `Limite de 15 webhooks atingido | guild=${guildId} channel=${contextoChannelId} panel=${messageId} user=${userId}`, error);
-        const emojiName = (payload.emoji && payload.emoji.name)
-          || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name)
-          || '📌';
+        const emojiName = emojiDaAcaoParaAPI(action) || emojiParaAPI(EMOJI_CONECTAR_CANAL);
         try {
           await message.removeReaction(emojiName, userId);
         } catch (removeError) {
@@ -323,8 +353,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
       }
     }
 
-    const emojiName = (payload.emoji && payload.emoji.name)
-      || (payload.reaction && payload.reaction.emoji && payload.reaction.emoji.name);
+    const emojiName = emojiDaAcaoParaAPI(action);
     try {
       await message.removeReaction(emojiName, userId);
     } catch (e) {
@@ -351,4 +380,16 @@ async function tratarReacaoPainel(payload, deps = {}) {
   }
 }
 
-module.exports = { ACOES_REACAO, acaoDaReacao, textoPainel, reacoesDoPainel, embedPainel, tratarReacaoPainel };
+module.exports = {
+  EMOJI_MODO_EMBED,
+  EMOJI_MODO_NORMAL,
+  EMOJI_EXIBIR_ICONE,
+  EMOJI_OCULTAR_ICONE,
+  EMOJI_CONECTAR_CANAL,
+  ACOES_REACAO,
+  acaoDaReacao,
+  textoPainel,
+  reacoesDoPainel,
+  embedPainel,
+  tratarReacaoPainel
+};
