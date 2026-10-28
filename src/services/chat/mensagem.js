@@ -1,9 +1,9 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { DONO_ID, MUBI_ID, COR_EMBED_MUBI } = require('../../config');
+const { DONO_ID, MUBI_ID, COR_EMBED_MUBI, ROTULO_BADGE } = require('../../config');
 const Guild = require('../../models/Guild');
 const User = require('../../models/User');
-const { corDaBadge } = require('../badges');
+const { corDaBadge, badgeAtiva } = require('../badges');
 
 function obterIconeServidor(g) {
   if (!g) return null;
@@ -42,7 +42,7 @@ async function infoMensagem(message) {
     Guild.findOne({ guildId }).lean(),
     User.findOne({ userId: String(autor.id) }).select('staff badges selectedBadge').lean()
   ]);
-  const ehStaff = !!(usuario && usuario.staff);
+  const badge = badgeAtiva(usuario);
 
   const mostrarIcone = !guildConfig || guildConfig.mostrarIcone !== false;
   const iconeServidor = mostrarIcone ? obterIconeServidor(g) : null;
@@ -57,8 +57,8 @@ async function infoMensagem(message) {
   } else if (autor.id === MUBI_ID) {
     authorText = `${nickname} (@${username}#${autor.discriminator}) - Desenvolvedor do Global`;
     corEmbed = COR_EMBED_MUBI;
-  } else if (ehStaff) {
-    authorText = `${nickname} (@${username}#${autor.discriminator}) - Staff`;
+    } else if (badge) {
+    authorText = `${nickname} (@${username}#${autor.discriminator}) - ${ROTULO_BADGE[badge]}`;
   }
 
   let urlMidia = null;
