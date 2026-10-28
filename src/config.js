@@ -89,14 +89,11 @@ const EMOJI_OK = [
   'checkboxcirclefill:1562606683371339777',
   '1562606683371339777',
   '<:checkboxcirclefill:1562606683371339777>',
-  '✅'
 ];
 
 const EMOJI_BLOQUEIO = [
   'errorwarningfill:1563362758655746048',
-  '1563362758655746048',
   '<:errorwarningfill:1563362758655746048>',
-  '⚠️'
 ];
 
 module.exports = {

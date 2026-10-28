@@ -62,6 +62,92 @@ function listar(itens) {
   return [];
 }
 
+function descreverUrlMidia(valor) {
+  if (!valor) return null;
+  try {
+    const url = new URL(String(valor));
+    const extensao = url.pathname.match(/\.([a-z0-9]{2,8})$/i);
+    return { host: url.hostname, extensao: extensao ? extensao[1].toLowerCase() : null };
+  } catch (_) {
+    return null;
+  }
+}
+
+function resumirMidiaMensagem(message = {}) {
+  const attachments = listar(message.attachments).map((anexo) => ({
+    tipo: anexo.contentType || 'desconhecido',
+    bytes: Number.isFinite(anexo.size) ? anexo.size : null,
+    dimensoes: anexo.width && anexo.height ? `${anexo.width}x${anexo.height}` : null,
+    duracaoSegundos: Number.isFinite(anexo.duration) ? anexo.duration : null,
+    url: descreverUrlMidia(anexo.url)
+  }));
+  const embeds = listar(message.embeds).map((embed) => ({
+    tipo: embed.type || 'desconhecido',
+    video: embed.video ? {
+      contentType: embed.video.contentType || null,
+      dimensoes: embed.video.width && embed.video.height ? `${embed.video.width}x${embed.video.height}` : null,
+      url: descreverUrlMidia(embed.video.url)
+    } : null,
+    imagem: embed.image ? {
+      contentType: embed.image.contentType || null,
+      dimensoes: embed.image.width && embed.image.height ? `${embed.image.width}x${embed.image.height}` : null,
+      url: descreverUrlMidia(embed.image.url)
+    } : null,
+    audio: embed.audio ? {
+      contentType: embed.audio.contentType || null,
+      url: descreverUrlMidia(embed.audio.url)
+    } : null
+  }));
+  const links = [...String(message.content || '').matchAll(/https?:\/\/[^\s<>]+/gi)]
+    .map((match) => descreverUrlMidia(match[0].replace(/[),.!?]+$/, '')))
+    .filter(Boolean);
+  const stickers = listar(message.stickers).map((sticker) => ({
+    formato: sticker.formatType || sticker.format || null,
+    url: descreverUrlMidia(sticker.url)
+  }));
+
+  return JSON.stringify({
+    anexos: attachments,
+    embeds,
+    links,
+    stickers,
+    total: attachments.length + embeds.length + stickers.length
+  });
+}
+
+function ehUrlVideo(valor) {
+  try {
+    return /\.(?:mp4|m4v|mov|webm|ogv|avi|mkv)$/i.test(new URL(String(valor)).pathname);
+  } catch (_) {
+    return false;
+  }
+}
+
+function ehAnexoVideo(anexo) {
+  return String(anexo.contentType || '').toLowerCase().startsWith('video/') || ehUrlVideo(anexo.url);
+}
+
+function obterLinksVideo(message = {}) {
+  const anexos = listar(message.attachments)
+    .filter((anexo) => anexo && anexo.url && ehAnexoVideo(anexo))
+    .map((anexo) => String(anexo.url));
+  const linksNoTexto = [...String(message.content || '').matchAll(/https?:\/\/[^\s<>]+/gi)]
+    .map((match) => match[0].replace(/[),.!?]+$/, ''))
+    .filter(ehUrlVideo);
+  return [...new Set([...anexos, ...linksNoTexto])];
+}
+
+function montarPayloadVideo(message = {}) {
+  const links = obterLinksVideo(message);
+  if (links.length === 0) return null;
+  return { content: links.join('\n'), allowedMentions: { parse: [] } };
+}
+
+function assinaturaAnexosMensagem(message = {}) {
+  return JSON.stringify(listar(message.attachments)
+    .map((anexo) => ({ url: anexo && anexo.url, contentType: anexo && anexo.contentType, size: anexo && anexo.size })));
+}
+
 function nomeDaFigurinha(figurinha, indice) {
   if (figurinha.name) return figurinha.name;
   try {
@@ -82,6 +168,48 @@ function montarEmbedContexto(info) {
     });
 }
 
+function ehLinkGifKlipy(valor) {
+  try {
+    const url = new URL(valor);
+    return /(^|\.)klipy\.com$/i.test(url.hostname) && /^\/gifs\//i.test(url.pathname);
+  } catch (_) {
+    return false;
+  }
+}
+
+function obterImagemPreviewKlipy(message) {
+  const linksOrigem = [...String(message.content || '').matchAll(/https?:\/\/[^\s<>]+/gi)]
+    .map((match) => match[0].replace(/[),.!?]+$/, ''));
+  return listar(message.embeds)
+    .filter((preview) => [preview && preview.url, ...linksOrigem].some(ehLinkGifKlipy))
+    .map((preview) => preview.image && preview.image.url || preview.thumbnail && preview.thumbnail.url)
+    .find(Boolean) || null;
+}
+
+function removerLinksGifKlipy(texto) {
+  return String(texto || '')
+    .replace(/https?:\/\/[^\s<>]+/gi, (url) => ehLinkGifKlipy(url.replace(/[),.!?]+$/, '')) ? '' : url)
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([,.;!?])/g, '$1')
+    .trim();
+}
+
+function removerLinksVideo(texto) {
+  return String(texto || '')
+    .replace(/https?:\/\/[^\s<>]+/gi, (url) => ehUrlVideo(url.replace(/[),.!?]+$/, '')) ? '' : url)
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([,.;!?])/g, '$1')
+    .trim();
+}
+
+function mascararLinksVideo(texto) {
+  return String(texto || '').replace(/https?:\/\/[^\s<>]+/gi, (url) => {
+    const link = url.replace(/[),.!?]+$/, '');
+    if (!ehUrlVideo(link)) return url;
+    return `[Vídeo](${link})${url.slice(link.length)}`;
+  });
+}
+
 function montarEmbedMensagem(message, info, texto) {
   const embed = montarEmbedContexto(info);
   const autor = message.author || {};
@@ -100,9 +228,15 @@ function montarEmbedMensagem(message, info, texto) {
   embed.setAuthor({ name: nomeAutorEmbed, ...(avatarUrl ? { iconURL: avatarUrl } : {}), ...(profileUrl ? { url: profileUrl } : {}) });
   if (texto) embed.setDescription(texto);
 
-  const imagem = listar(message.attachments)
+  const imagemAnexo = listar(message.attachments)
     .find((anexo) => anexo && anexo.url && /\.(?:png|jpe?g|gif|webp)(?:\?|$)/i.test(anexo.url));
-  if (imagem) embed.setImage(imagem.url);
+  if (imagemAnexo) {
+    embed.setImage(imagemAnexo.url);
+    return embed;
+  }
+
+  const previewImagem = obterImagemPreviewKlipy(message);
+  if (previewImagem) embed.setImage(previewImagem);
   return embed;
 }
 
@@ -121,8 +255,14 @@ function montarPayloadWebhook(message, info, replyTarget) {
     || 'Usuário';
   const nomeWebhook = autor.username ? `${nome} (@${autor.username})` : nome;
   const avatarUrl = typeof autor.displayAvatarURL === 'function' ? autor.displayAvatarURL() : null;
-  const files = listar(message.attachments)
-    .filter((anexo) => anexo && anexo.url)
+  const embedMode = info && info.modoMensagem === 'embed';
+  const attachments = listar(message.attachments).filter((anexo) => anexo && anexo.url);
+  const imagemEmbedAnexo = embedMode
+    ? attachments.find((anexo) => /\.(?:png|jpe?g|gif|webp)(?:\?|$)/i.test(anexo.url))
+    : null;
+  const videoLinks = obterLinksVideo(message);
+  const files = attachments
+    .filter((anexo) => !ehAnexoVideo(anexo) && (!imagemEmbedAnexo || anexo.url !== imagemEmbedAnexo.url))
     .map((anexo, indice) => ({
       name: anexo.filename || anexo.title || `anexo-${indice + 1}`,
       url: anexo.url,
@@ -139,7 +279,9 @@ function montarPayloadWebhook(message, info, replyTarget) {
   }
 
   const texto = message.content || '';
-  const embedMode = info && info.modoMensagem === 'embed';
+  const linksVideoAdicionais = videoLinks.filter((url) => !texto.includes(url));
+  const textoComLinksVideo = mascararLinksVideo([texto, ...linksVideoAdicionais].filter(Boolean).join('\n\n'));
+  const textoEmbed = embedMode ? removerLinksVideo(removerLinksGifKlipy(texto)) : texto;
   const nomeMascarado = String(nome).replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
   const linkUsuario = autor.id
     ? `[${nomeMascarado}](https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))})`
@@ -152,14 +294,14 @@ function montarPayloadWebhook(message, info, replyTarget) {
     linkUsuario ? `${linkUsuario}${creditoDesenvolvedor}` : ''
   ].filter(Boolean).join(' • ');
   const atribuicao = detalhes ? `-# ${detalhes}` : '';
-  const content = [texto, atribuicao].filter(Boolean).join('\n\n');
+  const content = [textoComLinksVideo, atribuicao].filter(Boolean).join('\n\n');
   const payload = {
     username: embedMode ? 'Global' : nomeWebhook,
     content: embedMode ? '' : content,
     allowedMentions: { parse: [] }
   };
 
-  if (embedMode) payload.embeds = [montarEmbedMensagem(message, info, [texto, atribuicao].filter(Boolean).join('\n\n'))];
+  if (embedMode) payload.embeds = [montarEmbedMensagem(message, info, [textoEmbed, atribuicao].filter(Boolean).join('\n\n'))];
 
   const webhookAvatarUrl = embedMode ? AVATAR_WEBHOOK_GLOBAL : avatarUrl;
   if (webhookAvatarUrl) payload.avatarUrl = webhookAvatarUrl;
@@ -185,4 +327,15 @@ function montarPayloadEdicao(message, info) {
   return payload;
 }
 
-module.exports = { infoMensagem, montarPayloadWebhook, montarPayloadEdicao };
+module.exports = {
+  infoMensagem,
+  montarPayloadWebhook,
+  montarPayloadEdicao,
+  resumirMidiaMensagem,
+  ehAnexoVideo,
+  ehUrlVideo,
+  obterLinksVideo,
+  montarPayloadVideo,
+  assinaturaAnexosMensagem,
+  removerLinksVideo
+};

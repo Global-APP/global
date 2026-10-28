@@ -13,7 +13,12 @@ const { reagir } = require('../../util/reacoes');
 const { reagirPorFalhaEnvio } = require('./falha');
 const { obterWebhook } = require('../webhooks');
 const { verificarConversador } = require('../badges');
-const { infoMensagem, montarPayloadWebhook } = require('./mensagem');
+const {
+  infoMensagem,
+  montarPayloadWebhook,
+  resumirMidiaMensagem,
+  montarPayloadVideo
+} = require('./mensagem');
 const { resolverAlvoReply, enviarComReplyOuFallback } = require('./reply');
 
 const cooldownUsuarios = new Map();
@@ -23,6 +28,7 @@ async function retransmitirMensagemGlobal(message) {
   const agora = Date.now();
   const info = await infoMensagem(message);
   const { guildId: guildIdOrigem } = info;
+  log.debug('GLOBAL', `Mídia recebida | msg=${message.id} guild=${guildIdOrigem} channel=${message.channel && message.channel.id || '?'} autor=${autor.id} metadata=${resumirMidiaMensagem(message)}`);
 
   const bloqueado = (await estaBloqueado('usuario', autor.id)) || (await estaBloqueado('servidor', guildIdOrigem));
   if (bloqueado) {
@@ -85,33 +91,65 @@ async function retransmitirMensagemGlobal(message) {
   const filtrados = candidatos.length - destinos.length;
 
   const resultados = await Promise.allSettled(destinos.map(async (destino) => {
-    /** @type {any} */
-    const canal = await client.channels.fetch(destino.canalId);
-    if (!canal) throw new Error('canal não encontrado');
+    log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | iniciando busca do canal para msg=${message.id}`);
+    try {
+      /** @type {any} */
+      const canal = await client.channels.fetch(destino.canalId);
+      if (!canal) throw new Error('canal não encontrado');
+      log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | canal resolvido (${canal.type || canal.constructor && canal.constructor.name || 'tipo desconhecido'})`);
 
-    let alvoReply = null;
-    if (grupoRespondido) {
-      alvoReply = await MensagemGlobal.findOne({ grupoId: grupoRespondido, guildId: destino.guildId }).lean();
-    }
-
-    const replyTarget = resolverAlvoReply(alvoReply, referenciaOriginal);
-    const infoDestino = await infoMensagem(message, destino);
-    const payload = montarPayloadWebhook(message, infoDestino, replyTarget);
-    const webhook = await obterWebhook(destino.guildId, destino.canalId, canal);
-    const { mensagem: enviada, comReply } = await enviarComReplyOuFallback(
-      webhook,
-      payload,
-      (erroReply, mensagemParcialId) => {
-        const detalhe = erroReply && (erroReply.code || erroReply.status || erroReply.statusCode);
-        log.warn(
-          'GLOBAL',
-          `Reply falhou no servidor ${destino.guildId}, ${mensagemParcialId ? `removida ${mensagemParcialId} e ` : ''}tentando sem reply${detalhe ? ` (código/status ${detalhe})` : ''}`
-        );
+      let alvoReply = null;
+      if (grupoRespondido) {
+        alvoReply = await MensagemGlobal.findOne({ grupoId: grupoRespondido, guildId: destino.guildId }).lean();
       }
-    );
-    if (!enviada) throw new Error('Webhook não retornou a mensagem criada');
 
-    return { guildId: destino.guildId, canalId: destino.canalId, msgId: enviada.id, comReply };
+      const replyTarget = resolverAlvoReply(alvoReply, referenciaOriginal);
+      const infoDestino = await infoMensagem(message, destino);
+      const payload = montarPayloadWebhook(message, infoDestino, replyTarget);
+      const payloadVideo = infoDestino.modoMensagem === 'embed' ? montarPayloadVideo(message) : null;
+      const metadataPayload = {
+        arquivosNoPayload: (payload.files || []).length,
+        videosComoLinks: payloadVideo ? payloadVideo.content.split('\n').length : 0,
+        modo: infoDestino.modoMensagem,
+        mídiaOriginal: resumirMidiaMensagem(message)
+      };
+      log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | payload montado=${JSON.stringify(metadataPayload)}`);
+      const webhook = await obterWebhook(destino.guildId, destino.canalId, canal);
+      log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | webhook pronta; enviando msg=${message.id}`);
+      const { mensagem: enviada, comReply } = await enviarComReplyOuFallback(
+        webhook,
+        payload,
+        (erroReply, mensagemParcialId) => {
+          const detalhe = erroReply && (erroReply.code || erroReply.status || erroReply.statusCode);
+          log.warn(
+            'GLOBAL',
+            `Reply falhou no servidor ${destino.guildId}, ${mensagemParcialId ? `removida ${mensagemParcialId} e ` : ''}tentando sem reply${detalhe ? ` (código/status ${detalhe})` : ''}`
+          );
+        }
+      );
+      if (!enviada) throw new Error('Webhook não retornou a mensagem criada');
+      const mensagensEnviadas = [{ msgId: String(enviada.id), tipo: 'mensagem' }];
+      if (payloadVideo) {
+        log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | enviando link de vídeo em mensagem separada (${payloadVideo.content.split('\n').length} link(s))`);
+        try {
+          const mensagemVideo = await webhook.send(payloadVideo, true);
+          if (mensagemVideo && mensagemVideo.id) {
+            mensagensEnviadas.push({ msgId: String(mensagemVideo.id), tipo: 'video' });
+            log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | link de vídeo enviado id=${mensagemVideo.id}`);
+          } else {
+            log.warn('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | webhook não retornou ID para a mensagem de vídeo`);
+          }
+        } catch (error) {
+          log.warn('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | embed enviada, mas falhou o link de vídeo: ${errMsg(error)}`);
+        }
+      }
+      log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | mensagem enviada id=${enviada.id} reply=${comReply}`);
+
+      return { guildId: destino.guildId, canalId: destino.canalId, mensagensEnviadas, comReply };
+    } catch (error) {
+      log.debug('GLOBAL', `Destino ${destino.guildId}/${destino.canalId} | falha no envio de msg=${message.id}: ${errMsg(error)}`);
+      throw error;
+    }
   }));
 
   const grupoId = String(message.id);
@@ -127,11 +165,13 @@ async function retransmitirMensagemGlobal(message) {
   const falhas = [];
   const tratamentos = [];
   resultados.forEach((r, i) => {
-    if (r.status === 'fulfilled' && r.value.msgId) {
+    if (r.status === 'fulfilled' && r.value.mensagensEnviadas && r.value.mensagensEnviadas.length > 0) {
       ok++;
       registrarSucessoDestino(r.value.guildId);
       if (r.value.comReply) replies++;
-      linhas.push({ grupoId, guildId: r.value.guildId, canalId: r.value.canalId, msgId: String(r.value.msgId), autorId: String(autor.id), criadoEm });
+      for (const enviada of r.value.mensagensEnviadas) {
+        linhas.push({ grupoId, guildId: r.value.guildId, canalId: r.value.canalId, msgId: enviada.msgId, tipo: enviada.tipo, autorId: String(autor.id), criadoEm });
+      }
     } else {
       const motivo = r.status === 'rejected' ? errMsg(r.reason) : 'sem id de mensagem';
       falhas.push(`${destinos[i].guildId}: ${motivo}`);

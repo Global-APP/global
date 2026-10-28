@@ -12,11 +12,11 @@ const { obterWebhook, removerWebhooksAnteriores } = require('./webhooks');
 const { limparFalhasDestino } = require('./destinos');
 const { log } = require('../util/logger');
 
-const EMOJI_MODO_EMBED = '🖼️';
-const EMOJI_MODO_NORMAL = '📝';
+const EMOJI_MODO_EMBED = '<:embed:1564817975662354432>';
+const EMOJI_MODO_NORMAL = '<:user:1564817645851643904>';
 const EMOJI_EXIBIR_ICONE = '<:imagefill:1564798265130487813>';
-const EMOJI_OCULTAR_ICONE = '🚫';
-const EMOJI_CONECTAR_CANAL = '📌';
+const EMOJI_OCULTAR_ICONE = '<:hide:1564817734078828544>';
+const EMOJI_CONECTAR_CANAL = '<:megaphone:1564817847593480192>';
 
 const ACOES_REACAO = Object.freeze({
   [EMOJI_MODO_EMBED]: 'embed',
