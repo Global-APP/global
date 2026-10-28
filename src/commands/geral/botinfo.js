@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
-const { DONO_ID, MUBI_ID, PREFIXO } = require('../../config');
+const { DONO_ID, MUBI_ID, PREFIXO, LINK_SERVIDOR_FLUXER, LINK_GITHUB } = require('../../config');
 const Guild = require('../../models/Guild');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 
@@ -24,7 +24,9 @@ module.exports = {
         .addFields(
           { name: '<:information2fill:1562606683371339784> Desenvolvedor', value: `<@${DONO_ID}> (\`xMqR\`)\n<@${MUBI_ID}> (\`Mubi\`)`, inline: true },
           { name: '<:brushaifill:1562606683371339785> Estatísticas:', value: `**${totalServidores}** Servidores\n**${totalUsuarios}+** Usuários ativos`, inline: true },
-          { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: `• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** \`@fluxerjs/core\`\n• **Banco de dados:** MongoDB\n• **Prefixo:** \`${PREFIXO}\`\n• **Status:** Operacional`, inline: false }
+          { name: '\u200b', value: '\u200b', inline: false },
+          { name: '<:checkboxcirclefill:1562606683371339777> Dados Técnicos', value: `• **Linguagem:** JavaScript (Node.js)\n• **Biblioteca:** \`@fluxerjs/core\`\n• **Banco de dados:** MongoDB\n• **Prefixo:** \`${PREFIXO}\`\n• **Status:** Operacional`, inline: true },
+          { name: '<:earthline1:1562606683371339780> Links:', value: `**<:fluxer:1564788110443675650> Fluxer:** [Servidor Fluxer](${LINK_SERVIDOR_FLUXER})\n **<:github:1564784716375134208> GitHub:** [GitHub](${LINK_GITHUB})`, inline: true },
         );
 
       await message.reply({ embeds: [embedInfo] });

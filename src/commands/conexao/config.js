@@ -1,9 +1,14 @@
 const { ehDev, PREFIXO } = require('../../config');
+const { client } = require('../../lib/client');
 const Guild = require('../../models/Guild');
 const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
-const { membroPodeGerenciarCanais } = require('../../services/permissoes');
+const {
+  membroPodeGerenciarCanais,
+  permissoesBotFaltando,
+  PERMISSOES_ABRIR_CONFIG
+} = require('../../services/permissoes');
 const { obterWebhook } = require('../../services/webhooks');
 const { reacoesDoPainel, embedPainel } = require('../../services/configPainel');
 
@@ -48,14 +53,37 @@ module.exports = {
 
   async publicarPainelConfiguracao(message, guildId) {
     let painel = null;
+    const canalPainelId = String(message.channel.id);
+    let faltando;
+    try {
+      faltando = await permissoesBotFaltando(message, client, [...PERMISSOES_ABRIR_CONFIG]);
+    } catch (e) {
+      log.error('CONFIG', `Não foi possível verificar as permissões do bot | ${descreverContexto(message)}`, e);
+      try {
+        await message.reply('⚠️ Não consegui verificar se tenho as permissões necessárias neste canal. Confira minhas permissões e tente novamente.');
+      } catch (replyError) {
+        log.error('CONFIG', `Não consegui avisar sobre as permissões ausentes | ${descreverContexto(message)}`, replyError);
+      }
+      return null;
+    }
+    if (faltando.length > 0) {
+      log.warn('CONFIG', `Painel recusado por permissões insuficientes do bot | ${descreverContexto(message)}: ${faltando.join(', ')}`);
+      try {
+        await message.reply(`⚠️ Não consigo abrir o painel neste canal. Estão faltando estas permissões: **${faltando.join(', ')}**.`);
+      } catch (e) {
+        log.error('CONFIG', `Não consegui avisar sobre as permissões ausentes | ${descreverContexto(message)}`, e);
+      }
+      return null;
+    }
+
     try {
       const atual = await Guild.findOne({ guildId }).lean();
       painel = await message.channel.send({
-        embeds: [embedPainel({}, true)],
+        embeds: [embedPainel({}, true, undefined, canalPainelId)],
         allowedMentions: { parse: [] }
       });
 
-      for (const emoji of reacoesDoPainel(atual || {})) {
+      for (const emoji of reacoesDoPainel(atual || {}, canalPainelId)) {
         await painel.react(emoji);
       }
 
@@ -69,7 +97,7 @@ module.exports = {
       );
       try {
         await painel.edit({
-          embeds: [embedPainel(atual || {})],
+          embeds: [embedPainel(atual || {}, false, undefined, canalPainelId)],
           allowedMentions: { parse: [] }
         });
       } catch (e) {

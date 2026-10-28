@@ -2,12 +2,14 @@ const { Webhook } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
 const Guild = require('../models/Guild');
 const { RETENCAO_MENSAGENS_MS } = require('../config');
+const { log } = require('../util/logger');
 
 function createWebhookService(deps = {}) {
   const api = {
     client: deps.client || client,
     Guild: deps.Guild || Guild,
-    Webhook: deps.Webhook || Webhook
+    Webhook: deps.Webhook || Webhook,
+    log: deps.log || log
   };
   const emAndamento = new Map();
 
@@ -153,7 +155,68 @@ function createWebhookService(deps = {}) {
     return removidas;
   }
 
-  return { obterWebhook, editarMensagemWebhook, apagarMensagemWebhook, limparWebhooksAntigos };
+  async function removerWebhooksAnteriores(guildId, webhookAtualId) {
+    const gId = String(guildId);
+    const manterId = String(webhookAtualId || '');
+    const guild = await api.Guild.findOne({ guildId: gId })
+      .select('+webhookToken +webhooksAntigas.webhookToken')
+      .lean();
+    if (!guild) return { removidas: 0, falhas: 0 };
+
+    const anteriores = [...(guild.webhooksAntigas || [])];
+    if (guild.webhookId && guild.webhookToken && String(guild.webhookId) !== manterId) {
+      anteriores.push({
+        canalId: guild.canalId,
+        webhookId: guild.webhookId,
+        webhookToken: guild.webhookToken
+      });
+    }
+
+    const unicas = [...new Map(anteriores
+      .filter((item) => item.webhookId && item.webhookToken && String(item.webhookId) !== manterId)
+      .map((item) => [String(item.webhookId), item])).values()];
+    let removidas = 0;
+    let falhas = 0;
+
+    for (const item of unicas) {
+      try {
+        await api.Webhook.fromToken(api.client, item.webhookId, item.webhookToken, {
+          guildId: gId,
+          channelId: item.canalId,
+          name: 'Global'
+        }).delete();
+        removidas++;
+      } catch (error) {
+        const status = error && (error.status || error.statusCode || (error.response && error.response.status));
+        const code = Number(error && (error.code || (error.rawError && error.rawError.code)));
+        if (status !== 404 && code !== 10015) {
+          falhas++;
+          api.log.error('CONFIG', `Falha ao remover webhook Global antiga | guild=${gId} channel=${item.canalId || '?'} webhook=${item.webhookId} status=${status || '?'} code=${code || '?'}`);
+          try {
+            await api.Guild.updateOne(
+              { guildId: gId, 'webhooksAntigas.webhookId': String(item.webhookId) },
+              { $set: { 'webhooksAntigas.$.expiraEm': Date.now() } }
+            );
+          } catch (_) {}
+          continue;
+        }
+      }
+
+      try {
+        await api.Guild.updateOne(
+          { guildId: gId },
+          { $pull: { webhooksAntigas: { webhookId: String(item.webhookId) } } }
+        );
+      } catch (error) {
+        falhas++;
+        api.log.error('CONFIG', `Webhook Global ${item.webhookId} removida, mas não consegui limpar o registro | guild=${gId} tipo=${error && error.name || 'erro'}`);
+      }
+    }
+
+    return { removidas, falhas };
+  }
+
+  return { obterWebhook, editarMensagemWebhook, apagarMensagemWebhook, limparWebhooksAntigos, removerWebhooksAnteriores };
 }
 
 const servico = createWebhookService();

@@ -8,8 +8,8 @@ function embedPing(latenciaApi, latenciaGateway) {
   embed.setTitle('🏓 Pong!');
   embed.setThumbnail(AVATAR_GLOBAL);
   embed.addFields(
-    { name: 'API Ping', value: latenciaApi === null ? 'Indisponível' : `${latenciaApi} ms`, inline: true },
-    { name: 'Gateway Ping', value: latenciaGateway === null ? 'Indisponível' : typeof latenciaGateway === 'number' ? `${latenciaGateway} ms` : latenciaGateway, inline: true }
+    { name: '<:information2fill:1562606683371339784> API Ping', value: latenciaApi === null ? 'Indisponível' : `${latenciaApi} ms`, inline: true },
+    { name: '<:information2fill:1562606683371339784> Gateway Ping', value: latenciaGateway === null ? 'Indisponível' : typeof latenciaGateway === 'number' ? `${latenciaGateway} ms` : latenciaGateway, inline: true }
   );
   return embed;
 }

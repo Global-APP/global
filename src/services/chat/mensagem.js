@@ -93,7 +93,10 @@ function montarEmbedMensagem(message, info, texto) {
   const avatarUrl = typeof autor.displayAvatarURL === 'function' ? autor.displayAvatarURL() : null;
 
   const profileUrl = autor.id ? `https://web.fluxer.app/users/${encodeURIComponent(String(autor.id))}` : null;
-  const nomeAutorEmbed = autor.username ? `${nome} (@${autor.username})` : nome;
+  const creditoDesenvolvedor = [DONO_ID, MUBI_ID].includes(String(autor.id))
+    ? ' - Desenvolvedor do Global'
+    : '';
+  const nomeAutorEmbed = `${autor.username ? `${nome} (@${autor.username})` : nome}${creditoDesenvolvedor}`;
   embed.setAuthor({ name: nomeAutorEmbed, ...(avatarUrl ? { iconURL: avatarUrl } : {}), ...(profileUrl ? { url: profileUrl } : {}) });
   if (texto) embed.setDescription(texto);
 

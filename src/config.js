@@ -1,5 +1,7 @@
 const PREFIXO = process.env.PREFIXO?.trim() || 'g.';
 const DEBUG_MODE = process.argv.includes('--debug');
+const LINK_SERVIDOR_FLUXER = process.env.LINK_SERVIDOR_FLUXER?.trim() || 'https://fluxer.gg/hDYAW1OU';
+const LINK_GITHUB = process.env.LINK_GITHUB?.trim() || 'https://github.com/Global-APP/global';
 
 const DONO_ID = process.env.DONO_ID?.trim() || '1561676586179100672';
 
@@ -100,6 +102,8 @@ const EMOJI_BLOQUEIO = [
 module.exports = {
   PREFIXO,
   DEBUG_MODE,
+  LINK_SERVIDOR_FLUXER,
+  LINK_GITHUB,
   DONO_ID,
   MUBI_ID,
   COR_EMBED_MUBI,
