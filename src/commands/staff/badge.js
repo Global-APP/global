@@ -1,13 +1,13 @@
 const User = require('../../models/User');
-const { ROTULO_BADGE, PREFIXO } = require('../../config');
+const { ROTULO_BADGE } = require('../../config');
 const { badgesDoUsuario, resolverBadge, concederBadge, removerBadge, esquecerConversador } = require('../../services/badges');
 const { badges: emojisBadges } = require('../../util/emojis');
 const { extrairId } = require('../../util/ids');
 const { log } = require('../../util/logger');
 const { negarSeNaoStaff } = require('./_comum');
 
-const USO = `<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}badge add <@usuario|ID> <badge>\`, \`${PREFIXO}badge remove <@usuario|ID> <badge>\` ou \`${PREFIXO}badge list <@usuario|ID>\`\n-# Badges: conversador, developer, parceiro, verificado`;
-const SEM_PERMISSAO_STAFF = `<:closecirclefill:1562606683371339786> A badge **Staff** é controlada por \`${PREFIXO}up\` e \`${PREFIXO}down\`.`;
+const USO = '<:information2fill:1562606683371339784> Uso correto: `g.badge add <@usuario|ID> <badge>`, `g.badge remove <@usuario|ID> <badge>` ou `g.badge list <@usuario|ID>`\n-# Badges: conversador, developer, parceiro, verificado';
+const SEM_PERMISSAO_STAFF = '<:closecirclefill:1562606683371339786> A badge **Staff** é controlada por `g.up` e `g.down`.';
 
 function formatar(badge) {
   return `${emojisBadges[badge] ?? ''} ${ROTULO_BADGE[badge] ?? badge}`.trim();

@@ -1,5 +1,4 @@
 const Palavra = require('../../models/Palavra');
-const { PREFIXO } = require('../../config');
 const { recarregarPalavras, acharPalavraProibida, totalEntradas } = require('../../services/filtros/palavras');
 const { normalizarTexto } = require('../../services/filtros/normalizacao');
 const { log } = require('../../util/logger');
@@ -19,7 +18,7 @@ module.exports = {
 
     if (['add', 'adicionar'].includes(sub) && palavra) {
       if (palavra.length < 2 || palavra.length > 50) {
-        await message.channel.send('<:closecirclefill:1562606683371339786> A palavra precisa ter entre 2 e 50 caracteres.');
+        await message.reply('<:closecirclefill:1562606683371339786> A palavra precisa ter entre 2 e 50 caracteres.');
         return;
       }
       await Palavra.updateOne(
@@ -29,16 +28,16 @@ module.exports = {
       );
       await recarregarPalavras();
       log.ok('FILTRO', `Palavra adicionada por ${message.author.id}`);
-      await message.channel.send('<:checkboxcirclefill:1562606683371339777> Palavra adicionada ao filtro.');
+      await message.reply('<:checkboxcirclefill:1562606683371339777> Palavra adicionada ao filtro.');
       return;
     }
 
     if (['remove', 'remover', 'del'].includes(sub) && palavra) {
       const r = await Palavra.deleteOne({ palavra, tipo: 'proibida' });
       await recarregarPalavras();
-      await message.channel.send(r.deletedCount > 0
+      await message.reply(r.deletedCount > 0
         ? '<:checkboxcirclefill:1562606683371339777> Palavra removida do filtro.'
-        : `<:information2fill:1562606683371339784> Essa palavra não está na lista personalizada (se vier das listas de arquivos, use \`${PREFIXO}filtro liberar\`).`);
+        : '<:information2fill:1562606683371339784> Essa palavra não está na lista personalizada (se vier das listas de arquivos, use `g.filtro liberar`).');
       return;
     }
 
@@ -50,14 +49,14 @@ module.exports = {
         { upsert: true }
       );
       await recarregarPalavras();
-      await message.channel.send('<:checkboxcirclefill:1562606683371339777> Palavra liberada (não será mais bloqueada).');
+      await message.reply('<:checkboxcirclefill:1562606683371339777> Palavra liberada (não será mais bloqueada).');
       return;
     }
 
     if (['desliberar', 'bloquear'].includes(sub) && palavra) {
       const r = await Palavra.deleteOne({ palavra, tipo: 'liberada' });
       await recarregarPalavras();
-      await message.channel.send(r.deletedCount > 0
+      await message.reply(r.deletedCount > 0
         ? '<:checkboxcirclefill:1562606683371339777> Exceção removida.'
         : '<:information2fill:1562606683371339784> Essa palavra não estava liberada.');
       return;
@@ -65,7 +64,7 @@ module.exports = {
 
     if (['testar', 'test'].includes(sub) && resto) {
       const achado = acharPalavraProibida(resto);
-      await message.channel.send(achado
+      await message.reply(achado
         ? `<:forbidline:1562606683371339778> Seria bloqueado. Bateu em: \`${achado}\``
         : '<:checkboxcirclefill:1562606683371339777> Passaria pelo filtro.');
       return;
@@ -73,7 +72,7 @@ module.exports = {
 
     if (['recarregar', 'reload'].includes(sub)) {
       await recarregarPalavras();
-      await message.channel.send(`<:checkboxcirclefill:1562606683371339777> Filtro recarregado (${totalEntradas()} entradas).`);
+      await message.reply(`<:checkboxcirclefill:1562606683371339777> Filtro recarregado (${totalEntradas()} entradas).`);
       return;
     }
 
@@ -83,7 +82,7 @@ module.exports = {
       const excecoes = palavras.filter((p) => p.tipo === 'liberada').map((p) => p.palavra);
       let texto = custom.length ? custom.map((p) => `\`${p}\``).join(', ') : '*(nenhuma)*';
       if (texto.length > 1500) texto = texto.slice(0, 1500) + '…';
-      await message.channel.send(
+      await message.reply(
         `<:information2fill:1562606683371339784> **Filtro** — ${totalEntradas()} entradas no total\n` +
         `**Personalizadas (${custom.length}):** ${texto}\n` +
         `**Liberadas (${excecoes.length}):** ${excecoes.length ? excecoes.map((p) => `\`${p}\``).join(', ') : '*(nenhuma)*'}`
@@ -91,8 +90,8 @@ module.exports = {
       return;
     }
 
-    await message.channel.send(
-      `<:information2fill:1562606683371339784> Uso: \`${PREFIXO}filtro add|remove <palavra>\`, \`liberar|desliberar <palavra>\`, \`testar <texto>\`, \`recarregar\` ou \`list\``
+    await message.reply(
+      '<:information2fill:1562606683371339784> Uso: `g.filtro add|remove <palavra>`, `liberar|desliberar <palavra>`, `testar <texto>`, `recarregar` ou `list`'
     );
   }
 };

@@ -52,9 +52,7 @@ async function listarDestinosAtivos() {
       guildId: g.guildId,
       canalId: g.canalId,
       filtrarPalavroes: !!g.filtrarPalavroes,
-      filtrarLinks: !!g.filtrarLinks,
-      modoMensagem: g.modoMensagem === 'cru' ? 'cru' : 'embed',
-      mostrarIcone: g.mostrarIcone !== false
+      filtrarLinks: !!g.filtrarLinks
     }));
 }
 

@@ -1,4 +1,4 @@
-const { ehDev, PREFIXO } = require('../../config');
+const { ehDev } = require('../../config');
 const User = require('../../models/User');
 const { ehSnowflake } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -23,7 +23,7 @@ module.exports = {
     }
 
     if (!alvoId) {
-      await message.reply(`<:information2fill:1562606683371339784> Uso correto: \`${PREFIXO}up @usuario\` ou \`${PREFIXO}up ID\``);
+      await message.reply('<:information2fill:1562606683371339784> Uso correto: `g.up @usuario` ou `g.up ID`');
       return;
     }
 

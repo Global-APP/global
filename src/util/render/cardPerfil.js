@@ -1,7 +1,6 @@
 const path = require('path');
 const { ROTULO_BADGE } = require('../../config');
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
-const { log } = require('../logger');
 const LARGURA = 1000;
 const ALTURA = 340;
 const ESCALA = 2;
@@ -37,7 +36,7 @@ const BADGES = {
 const cacheBadges = new Map();
 async function iconeBadge(chave) {
   if (!cacheBadges.has(chave)) {
-    cacheBadges.set(chave, carregarImagem(path.join(ASSETS, 'badges', `${chave}.png`), `ícone da badge ${chave}`));
+    cacheBadges.set(chave, carregarImagem(path.join(ASSETS, 'badges', `${chave}.png`)));
   }
   return cacheBadges.get(chave);
 }
@@ -85,39 +84,16 @@ function formatarData(ms) {
   return `${String(d.getDate()).padStart(2, '0')} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function descreverFonteImagem(fonte) {
-  if (typeof fonte !== 'string') return typeof fonte;
+async function carregarImagem(fonte) {
+  if (!fonte) return null;
   try {
-    const url = new URL(fonte);
-    return `${url.origin}${url.pathname}`;
-  } catch (_) {
-    return `arquivo:${path.basename(fonte)}`;
-  }
-}
-
-function mensagemErroImagem(error) {
-  return String(error && error.message ? error.message : error)
-    .replace(/(https?:\/\/[^\s?#]+)(?:\?[^\s#]*)?(?:#[^\s]*)?/gi, '$1');
-}
-
-async function carregarImagem(fonte, descricao = 'imagem') {
-  if (!fonte) {
-    log.debug('PERFIL', `Carregamento de ${descricao} ignorado: fonte vazia`);
-    return null;
-  }
-  log.debug('PERFIL', `Carregando ${descricao} de ${descreverFonteImagem(fonte)}`);
-  try {
-    const imagem = await loadImage(fonte);
-    log.debug('PERFIL', `${descricao} carregada: ${imagem.width}x${imagem.height}`);
-    return imagem;
-  } catch (error) {
-    log.debug('PERFIL', `Falha ao carregar ${descricao}: ${mensagemErroImagem(error)}`);
+    return await loadImage(fonte);
+  } catch {
     return null;
   }
 }
 
 function iconeColorido(img, tamanho, cor) {
-  log.debug('PERFIL', `Criando canvas auxiliar para colorir ícone: ${tamanho}x${tamanho}`);
   const c = createCanvas(tamanho, tamanho);
   const x = c.getContext('2d');
   x.drawImage(img, 0, 0, tamanho, tamanho);
@@ -296,17 +272,11 @@ async function gerarCardPerfil(dados) {
     badgeImagens = {}
   } = dados;
 
-  log.debug('PERFIL', `Iniciando criação do canvas do perfil: ${LARGURA * ESCALA}x${ALTURA * ESCALA}`);
   const canvas = createCanvas(LARGURA * ESCALA, ALTURA * ESCALA);
   const ctx = canvas.getContext('2d');
-  log.debug('PERFIL', `Canvas do perfil criado: ${canvas.width}x${canvas.height} (escala ${ESCALA}x)`);
   ctx.scale(ESCALA, ESCALA);
 
-  const [iconeImg, avatarImg] = await Promise.all([
-    carregarImagem(ICONE_PATH, 'ícone do Global'),
-    carregarImagem(avatar, 'avatar do perfil')
-  ]);
-  log.debug('PERFIL', `Imagens base resolvidas: ícone=${iconeImg ? 'ok' : 'fallback'} avatar=${avatarImg ? 'ok' : 'fallback'}`);
+  const [iconeImg, avatarImg] = await Promise.all([carregarImagem(ICONE_PATH), carregarImagem(avatar)]);
   const iconeBranco = iconeImg ? iconeColorido(iconeImg, 512, '#FFFFFF') : null;
 
   caminhoArredondado(ctx, 0, 0, LARGURA, ALTURA, 30);
@@ -339,9 +309,7 @@ async function gerarCardPerfil(dados) {
   const imagensBadge = {};
   await Promise.all(
     validas.map(async (b) => {
-      imagensBadge[b] = badgeImagens[b]
-        ? await carregarImagem(badgeImagens[b], `badge ${b}`)
-        : await iconeBadge(b);
+      imagensBadge[b] = badgeImagens[b] ? await carregarImagem(badgeImagens[b]) : await iconeBadge(b);
     })
   );
 
@@ -397,10 +365,7 @@ async function gerarCardPerfil(dados) {
     desenharCardStat(ctx, margem + i * (tileW + gap), tileY, tileW, tileH, rotulo, String(valor), detalhe);
   });
 
-  log.debug('PERFIL', `Desenho concluído; serializando canvas ${canvas.width}x${canvas.height} como PNG`);
-  const png = canvas.toBuffer('image/png');
-  log.debug('PERFIL', `PNG do perfil gerado: ${png.length} bytes`);
-  return png;
+  return canvas.toBuffer('image/png');
 }
 
 module.exports = { gerarCardPerfil, BADGES };

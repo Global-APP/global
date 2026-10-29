@@ -1,4 +1,4 @@
-const { NSFW_ENABLED, NSFW_URL, NSFW_API_KEY, NSFW_TIMEOUT_MS, NSFW_FALHA_BLOQUEIA } = require('../../config');
+const { NSFW_URL, NSFW_API_KEY, NSFW_TIMEOUT_MS, NSFW_FALHA_BLOQUEIA } = require('../../config');
 const { log, descreverContexto } = require('../../util/logger');
 
 const EXT_AUDIO = /\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|wma|amr|mid|midi)$/i;
@@ -50,8 +50,6 @@ async function consultarServicoNsfw(url) {
 }
 
 async function checarMidia(message) {
-  if (!NSFW_ENABLED) return null;
-
   const url = midiaParaVerificar(message);
   if (!url) return null;
 

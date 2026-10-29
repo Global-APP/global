@@ -5,7 +5,6 @@ const mensagemGlobalSchema = new Schema({
   guildId: { type: String, required: true },
   canalId: { type: String, required: true },
   msgId: { type: String, required: true, unique: true },
-  tipo: { type: String, enum: ['mensagem', 'video'], default: 'mensagem' },
   autorId: { type: String, required: true },
   criadoEm: { type: Number, required: true, default: () => Date.now() }
 });
