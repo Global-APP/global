@@ -1,5 +1,5 @@
 const User = require('../../models/User');
-const { ROTULO_BADGE, CONVERSADOR_MENSAGENS, PREFIXO } = require('../../config');
+const { ROTULO_BADGE, CONVERSADOR_MENSAGENS } = require('../../config');
 const { badgesDoUsuario, badgeAtiva, resolverBadge, selecionarBadge } = require('../../services/badges');
 const { emojis, badges: emojisBadges } = require('../../util/emojis');
 
@@ -34,7 +34,7 @@ module.exports = {
       await message.reply(
         '<:information2fill:1562606683371339784> Suas badges:\n' +
         `${possui.map((b) => `• ${formatar(b)}${b === atual ? ' (em destaque)' : ''}`).join('\n')}\n` +
-        `-# Use \`${PREFIXO}destacar <badge>\` para escolher ou \`${PREFIXO}destacar nenhuma\` para voltar ao automático.`
+        '-# Use `g.destacar <badge>` para escolher ou `g.destacar nenhuma` para voltar ao automático.'
       );
       return;
     }
@@ -47,7 +47,7 @@ module.exports = {
 
     const badge = resolverBadge(escolha);
     if (!badge || !possui.includes(badge)) {
-      await message.reply(`${emojis.error} Você não possui essa badge. Use \`${PREFIXO}destacar\` para ver as suas.`);
+      await message.reply(`${emojis.error} Você não possui essa badge. Use \`g.destacar\` para ver as suas.`);
       return;
     }
 

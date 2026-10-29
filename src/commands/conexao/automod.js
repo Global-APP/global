@@ -1,5 +1,4 @@
 const { configDaGuild } = require('../../services/filtros/moderacao');
-const { PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
@@ -31,7 +30,7 @@ module.exports = {
         '<:information2fill:1562606683371339784> **Filtros deste servidor**\n' +
         `• Palavrões: ${st(cfg.filtrarPalavroes)}\n` +
         `• Links: ${st(cfg.filtrarLinks)}\n\n` +
-        `Uso: \`${PREFIXO}automod palavroes on|off\` ou \`${PREFIXO}automod links on|off\`\n` +
+        'Uso: `g.automod palavroes on|off` ou `g.automod links on|off`\n' +
         '-# Padrão: liberados. Com o filtro ativo, este servidor não recebe mensagens com palavrões/links e as mensagens enviadas daqui com isso são apagadas.'
       );
       return;

@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { CANAL_REPORTS, COOLDOWN_REPORT, PREFIXO } = require('../../config');
+const { CANAL_REPORTS, COOLDOWN_REPORT } = require('../../config');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { log } = require('../../util/logger');
 
@@ -13,30 +13,30 @@ module.exports = {
 
   async execute(message, args) {
     if (!CANAL_REPORTS) {
-      await message.channel.send('<:information2fill:1562606683371339784> O sistema de denúncias ainda não está disponível.');
+      await message.reply('<:information2fill:1562606683371339784> O sistema de denúncias ainda não está disponível.');
       return;
     }
 
     const refId = message.messageReference ? message.messageReference.messageId : null;
     if (!refId) {
-      await message.channel.send(`<:information2fill:1562606683371339784> **Responda** (reply) à mensagem que deseja denunciar usando \`${PREFIXO}report [motivo]\`.`);
+      await message.reply('<:information2fill:1562606683371339784> **Responda** (reply) à mensagem que deseja denunciar usando `g.report [motivo]`.');
       return;
     }
 
     const ultimo = cooldownReports.get(message.author.id);
     if (ultimo && Date.now() - ultimo < COOLDOWN_REPORT) {
-      await message.channel.send('<:forbidline:1562606683371339778> Aguarde um pouco antes de enviar outra denúncia.');
+      await message.reply('<:forbidline:1562606683371339778> Aguarde um pouco antes de enviar outra denúncia.');
       return;
     }
 
     const r = await MensagemGlobal.findOne({ msgId: String(refId) }).lean();
     const origem = r ? await MensagemGlobal.findOne({ grupoId: r.grupoId, msgId: r.grupoId }).lean() : null;
     if (!r || !origem) {
-      await message.channel.send('<:closecirclefill:1562606683371339786> Só consigo denunciar mensagens recentes do chat global.');
+      await message.reply('<:closecirclefill:1562606683371339786> Só consigo denunciar mensagens recentes do chat global.');
       return;
     }
     if (origem.autorId === String(message.author.id)) {
-      await message.channel.send('<:closecirclefill:1562606683371339786> Você não pode denunciar a si mesmo.');
+      await message.reply('<:closecirclefill:1562606683371339786> Você não pode denunciar a si mesmo.');
       return;
     }
 
@@ -82,15 +82,15 @@ module.exports = {
           { name: 'Motivo', value: motivo, inline: false },
           { name: 'Mensagem', value: trecho, inline: false }
         )
-        .setFooter({ text: `${PREFIXO}ban usuario ${origem.autorId}  •  msg ${r.grupoId}` });
+        .setFooter({ text: `g.ban usuario ${origem.autorId}  •  msg ${r.grupoId}` });
 
       await canal.send({ embeds: [embed] });
       cooldownReports.set(message.author.id, Date.now());
       log.ok('REPORT', `Denúncia de ${message.author.id} contra ${origem.autorId} (msg ${r.grupoId})`);
-      await message.channel.send('<:checkboxcirclefill:1562606683371339777> Denúncia enviada para a equipe do Global. Obrigado!');
+      await message.reply('<:checkboxcirclefill:1562606683371339777> Denúncia enviada para a equipe do Global. Obrigado!');
     } catch (e) {
       log.error('REPORT', 'Falha ao enviar denúncia', e);
-      await message.channel.send('<:closecirclefill:1562606683371339786> Não consegui enviar a denúncia agora. Tente novamente mais tarde.');
+      await message.reply('<:closecirclefill:1562606683371339786> Não consegui enviar a denúncia agora. Tente novamente mais tarde.');
     }
   }
 };
