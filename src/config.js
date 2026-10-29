@@ -1,8 +1,11 @@
-const PREFIXO = 'g.';
+const PREFIXO = process.env.PREFIXO?.trim() || 'g.';
+const DEBUG_MODE = process.argv.includes('--debug');
+const LINK_SERVIDOR_FLUXER = process.env.LINK_SERVIDOR_FLUXER?.trim() || 'https://fluxer.gg/hDYAW1OU';
+const LINK_GITHUB = process.env.LINK_GITHUB?.trim() || 'https://github.com/Global-APP/global';
 
-const DONO_ID = '1561676586179100672';
+const DONO_ID = process.env.DONO_ID?.trim() || '1561676586179100672';
 
-const MUBI_ID = '1561698550566363137';
+const MUBI_ID = process.env.MUBI_ID?.trim() || '1561698550566363137';
 
 const COR_EMBED_MUBI = 0xeb0075;
 
@@ -32,9 +35,9 @@ const CONVERSADOR_MENSAGENS = 100;
 
 const CONVERSADOR_JANELA_MS = 3 * 24 * 60 * 60 * 1000;
 
-const COOLDOWN_TEMPO = 1000;
-
 const COOLDOWN_PERFIL = 5_000;
+
+const COOLDOWN_TEMPO = 1000;
 
 const SUPORTE_GUILD_ID = '1561937517035388928';
 
@@ -71,6 +74,9 @@ const REGEX_CONVITE = /(?:discord\.gg|discord(?:app)?\.com\/invite|fluxer\.gg|(?
 
 const REGEX_LINK = /(?:https?:\/\/|www\.)\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|gg|io|app|me|xyz|link|ly|tv|dev|info|gl|br)\b(?:\/\S*)?/i;
 
+// Serviço de verificação NSFW (server.js).
+const NSFW_ENABLED = String(process.env.NSFW_ENABLED || 'true').trim().toLowerCase() !== 'false';
+
 const NSFW_URL = process.env.NSFW_URL || 'http://localhost:3000';
 
 const NSFW_API_KEY = process.env.NSFW_API_KEY || '';
@@ -79,8 +85,22 @@ const NSFW_TIMEOUT_MS = 30_000;
 
 const NSFW_FALHA_BLOQUEIA = true;
 
+const EMOJI_OK = [
+  'checkboxcirclefill:1562606683371339777',
+  '1562606683371339777',
+  '<:checkboxcirclefill:1562606683371339777>',
+];
+
+const EMOJI_BLOQUEIO = [
+  'errorwarningfill:1563362758655746048',
+  '<:errorwarningfill:1563362758655746048>',
+];
+
 module.exports = {
   PREFIXO,
+  DEBUG_MODE,
+  LINK_SERVIDOR_FLUXER,
+  LINK_GITHUB,
   DONO_ID,
   MUBI_ID,
   COR_EMBED_MUBI,
@@ -91,8 +111,8 @@ module.exports = {
   ROTULO_BADGE,
   CONVERSADOR_MENSAGENS,
   CONVERSADOR_JANELA_MS,
-  COOLDOWN_TEMPO,
   COOLDOWN_PERFIL,
+  COOLDOWN_TEMPO,
   SUPORTE_GUILD_ID,
   SUPORTE_CANAL_BOAS_VINDAS,
   PASTA_LOGS,
@@ -109,8 +129,11 @@ module.exports = {
   SPAM_JANELA_MS,
   REGEX_CONVITE,
   REGEX_LINK,
+  NSFW_ENABLED,
   NSFW_URL,
   NSFW_API_KEY,
   NSFW_TIMEOUT_MS,
   NSFW_FALHA_BLOQUEIA,
+  EMOJI_OK,
+  EMOJI_BLOQUEIO
 };

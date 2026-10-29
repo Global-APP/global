@@ -1,6 +1,6 @@
 const { Events } = require('@fluxerjs/core');
 const { client } = require('../lib/client');
-const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS } = require('../config');
+const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS, PREFIXO } = require('../config');
 const Guild = require('../models/Guild');
 const User = require('../models/User');
 const { limparFalhasDestino } = require('../services/destinos');
@@ -10,9 +10,37 @@ const { tratarComando } = require('../handlers/commandHandler');
 const { idDoServidor } = require('../util/ids');
 const { log, descreverContexto } = require('../util/logger');
 const { iniciarStatusRotativo } = require('../services/status');
+const { acaoDaReacao, tratarReacaoPainel } = require('../services/configPainel');
+
+function registrarLogReacao(tipo, payload, userId, emoji) {
+  if (!acaoDaReacao(emoji)) return;
+  const messageId = payload.messageId || (payload.message && payload.message.id) || '?';
+  const guildId = payload.guildId || (payload.reaction && payload.reaction.guildId) || (payload.message && payload.message.guildId) || (payload.channel && payload.channel.guildId) || '?';
+  const channelId = payload.channelId || (payload.message && payload.message.channelId) || '?';
+    const emojiLabel = emoji && typeof emoji === 'object' ? emoji.name : emoji;
+    log.debug('CONFIG', `Evento ${tipo} recebido: guild=${guildId} channel=${channelId} message=${messageId} user=${userId || '?'} emoji=${JSON.stringify(emojiLabel)} cachedMessage=${Boolean(payload.message)}`);
+}
 
 function registrarEventos() {
+  client.on(Events.MessageReactionAdd, async (payload) => {
+    registrarLogReacao('MessageReactionAdd', payload, payload.userId || (payload.user && payload.user.id), payload.emoji);
+    await tratarReacaoPainel(payload);
+  });
+
+  client.on(Events.MessageReactionAddMany, async (payload) => {
+    for (const reaction of payload.reactions || []) {
+      registrarLogReacao('MessageReactionAddMany', payload, reaction.userId, reaction.emoji);
+      await tratarReacaoPainel({
+        ...payload,
+        userId: reaction.userId,
+        member: reaction.member,
+        emoji: reaction.emoji
+      });
+    }
+  });
+
   client.on(Events.Ready, async () => {
+    log.debug('BOT', `Gateway READY; guilds em cache=${client.guilds.cache.size}`);
     const [canais, staffs] = await Promise.all([
       Guild.countDocuments({ canalId: { $ne: null } }),
       User.countDocuments({ staff: true })
@@ -45,7 +73,7 @@ function registrarEventos() {
 
       if (conteudo.includes(`<@${client.user.id}>`)) {
         log.info('MENCAO', descreverContexto(message));
-        await message.channel.send('<:earthline1:1562606683371339780> Olá, eu sou o **Global**, eu conecto comunidades através de um chat global e o meu prefixo é `g.`, caso você gostar de mim, que tal me [adicionar em seu servidor?](<https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=22527189434367169>)');
+        await message.channel.send(`<:earthline1:1562606683371339780> Olá, eu sou o **Global**, eu conecto comunidades através de um chat global e o meu prefixo aqui é \`${PREFIXO}\`, caso você gostar de mim, que tal me [adicionar em seu servidor?](<https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=22527189434367169>)`);
         return;
       }
 

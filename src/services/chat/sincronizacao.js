@@ -3,7 +3,8 @@ const MensagemGlobal = require('../../models/MensagemGlobal');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild } = require('../filtros/moderacao');
 const { log } = require('../../util/logger');
 const { ehStaffOuDono } = require('../permissoes');
-const { infoMensagem, montarEmbedGlobal } = require('./mensagem');
+const { apagarMensagemWebhook, editarMensagemWebhook } = require('../webhooks');
+const { infoMensagem, montarPayloadEdicao, montarPayloadVideo, assinaturaAnexosMensagem } = require('./mensagem');
 
 async function ehMensagemOriginal(id) {
   const r = await MensagemGlobal.findOne({ msgId: String(id) }).lean();
@@ -14,6 +15,9 @@ async function apagarCopiasDoGrupo(grupoId) {
   const gId = String(grupoId);
   const copias = await MensagemGlobal.find({ grupoId: gId, msgId: { $ne: gId } }).lean();
   const resultados = await Promise.allSettled(copias.map(async (c) => {
+    const apagadaWebhook = await apagarMensagemWebhook(c.guildId, c.canalId, c.msgId);
+    if (apagadaWebhook !== null) return;
+
     const canal = await client.channels.fetch(c.canalId);
     const m = await canal.messages.fetch(c.msgId);
     await m.delete();
@@ -26,7 +30,8 @@ async function sincronizarEdicao(antiga, nova) {
   if (!nova || !nova.id) return;
   const id = String(nova.id);
   if (!(await ehMensagemOriginal(id))) return;
-  if (antiga && antiga.content != null && antiga.content === nova.content) return;
+  if (antiga && antiga.content != null && antiga.content === nova.content
+    && assinaturaAnexosMensagem(antiga) === assinaturaAnexosMensagem(nova)) return;
 
   const canalOrigem = await client.channels.fetch(String(nova.channelId));
   const completa = await canalOrigem.messages.fetch(id);
@@ -45,17 +50,49 @@ async function sincronizarEdicao(antiga, nova) {
     }
   }
 
-  const embed = montarEmbedGlobal(completa, info);
   const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
 
   const resultados = await Promise.allSettled(copias.map(async (c) => {
-    const canal = await client.channels.fetch(c.canalId);
-    const m = await canal.messages.fetch(c.msgId);
-    if (motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
-      await m.delete();
+    const configDestino = await configDaGuild(c.guildId);
+    if (motivoFiltroGuild(analise, configDestino)) {
+      const apagadaWebhook = await apagarMensagemWebhook(c.guildId, c.canalId, c.msgId);
+      if (apagadaWebhook === null) {
+        const canal = await client.channels.fetch(c.canalId);
+        const m = await canal.messages.fetch(c.msgId);
+        await m.delete();
+      }
       return 'removida';
     }
-    await m.edit({ embeds: [embed] });
+
+    if (c.tipo === 'video') {
+      const payloadVideo = montarPayloadVideo(completa);
+      if (!payloadVideo) {
+        const apagadaWebhook = await apagarMensagemWebhook(c.guildId, c.canalId, c.msgId);
+        if (apagadaWebhook === null) {
+          const canal = await client.channels.fetch(c.canalId);
+          const m = await canal.messages.fetch(c.msgId);
+          await m.delete();
+        }
+        await MensagemGlobal.deleteOne({ msgId: String(c.msgId) });
+        return 'removida';
+      }
+
+      const editadaWebhook = await editarMensagemWebhook(c.guildId, c.canalId, c.msgId, payloadVideo);
+      if (editadaWebhook !== null) return 'editada';
+      const canal = await client.channels.fetch(c.canalId);
+      const m = await canal.messages.fetch(c.msgId);
+      await m.edit(payloadVideo);
+      return 'editada';
+    }
+
+    const infoDestino = await infoMensagem(completa, configDestino);
+    const payload = montarPayloadEdicao(completa, infoDestino);
+    const editadaWebhook = await editarMensagemWebhook(c.guildId, c.canalId, c.msgId, payload);
+    if (editadaWebhook !== null) return 'editada';
+
+    const canal = await client.channels.fetch(c.canalId);
+    const m = await canal.messages.fetch(c.msgId);
+    await m.edit(payload);
     return 'editada';
   }));
 
