@@ -6,6 +6,7 @@ const { carregarComandos } = require('./src/handlers/commandHandler');
 const { recarregarPalavras } = require('./src/services/filtros/palavras');
 const { iniciarLimpezaMensagens } = require('./src/services/limpeza');
 const { iniciarAnuncio } = require('./src/services/anuncio');
+const { registrarSugestoes } = require('./src/services/sugestoes');
 const { log } = require('./src/util/logger');
 
 async function main(token) {
@@ -17,6 +18,7 @@ async function main(token) {
   iniciarLimpezaMensagens();
   carregarComandos();
   registrarEventos();
+  registrarSugestoes();
 
   await client.login(token);
 }
