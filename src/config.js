@@ -117,4 +117,6 @@ module.exports = {
   NSFW_API_KEY,
   NSFW_TIMEOUT_MS,
   NSFW_FALHA_BLOQUEIA,
+  STATS_PORT,
+  STATS_ORIGEM,
 };
