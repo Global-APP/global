@@ -79,6 +79,10 @@ const NSFW_TIMEOUT_MS = 30_000;
 
 const NSFW_FALHA_BLOQUEIA = true;
 
+const STATS_PORT = Number(process.env.STATS_PORT) || 0;
+
+const STATS_ORIGEM = process.env.STATS_ORIGEM || 'https://globalbot.site';
+
 module.exports = {
   PREFIXO,
   DONO_ID,
