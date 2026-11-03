@@ -92,4 +92,4 @@ function montarEmbedGlobal(message, info) {
   return embed;
 }
 
-module.exports = { infoMensagem, montarEmbedGlobal, obterIconeServidor };
+module.exports = { infoMensagem, montarEmbedGlobal };
