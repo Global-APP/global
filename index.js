@@ -7,7 +7,6 @@ const { recarregarPalavras } = require('./src/services/filtros/palavras');
 const { iniciarLimpezaMensagens } = require('./src/services/limpeza');
 const { iniciarAnuncio } = require('./src/services/anuncio');
 const { registrarSugestoes } = require('./src/services/sugestoes');
-const { iniciarApiPublica } = require('./src/services/apiPublica');
 const { log } = require('./src/util/logger');
 
 async function main(token) {
@@ -22,7 +21,6 @@ async function main(token) {
   registrarSugestoes();
 
   await client.login(token);
-  iniciarApiPublica();
 }
 
 process.on('unhandledRejection', (e) => log.error('PROCESSO', 'Promise rejeitada sem tratamento', e));
