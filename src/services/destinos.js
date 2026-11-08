@@ -2,6 +2,7 @@ const { MAX_FALHAS_CONSECUTIVAS } = require('../config');
 const Guild = require('../models/Guild');
 const Bloqueio = require('../models/Bloqueio');
 const { log, errMsg } = require('../util/logger');
+const { obterDestinos } = require('../lib/cacheDestinos');
 
 const falhasConsecutivas = new Map();
 
@@ -38,7 +39,7 @@ function registrarSucessoDestino(guildId) {
   limparFalhasDestino(guildId);
 }
 
-async function listarDestinosAtivos() {
+async function carregarDestinosAtivos() {
   const [guilds, bloqueados] = await Promise.all([
     Guild.find({ canalId: { $ne: null }, pausado: false }).lean(),
     Bloqueio.find({ tipo: 'servidor' }).distinct('id')
@@ -54,6 +55,11 @@ async function listarDestinosAtivos() {
       filtrarPalavroes: !!g.filtrarPalavroes,
       filtrarLinks: !!g.filtrarLinks
     }));
+}
+
+// Em cache (invalidado por hooks dos models Guild/Bloqueio). Quem chama não deve mutar a lista.
+function listarDestinosAtivos() {
+  return obterDestinos(carregarDestinosAtivos);
 }
 
 module.exports = {

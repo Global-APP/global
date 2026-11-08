@@ -1,25 +1,47 @@
 const { client } = require('../../lib/client');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild } = require('../filtros/moderacao');
-const { log } = require('../../util/logger');
+const { log, errMsg } = require('../../util/logger');
 const { ehStaffOuDono } = require('../permissoes');
 const { infoMensagem, montarEmbedGlobal } = require('./mensagem');
+const { editarMensagem, apagarMensagem, erroPermanente } = require('../entrega/transporte');
 
 async function ehMensagemOriginal(id) {
   const r = await MensagemGlobal.findOne({ msgId: String(id) }).lean();
   return !!r && r.grupoId === String(id);
 }
 
+// Apaga as cópias direto por canalId/msgId (já estão no banco, não precisa buscar nada na API).
+// Só remove o vínculo de quem foi apagado (ou já não existia) ou falhou de forma permanente;
+// se algo falhou por motivo transitório, o vínculo continua no banco para não deixar órfã.
 async function apagarCopiasDoGrupo(grupoId) {
   const gId = String(grupoId);
   const copias = await MensagemGlobal.find({ grupoId: gId, msgId: { $ne: gId } }).lean();
-  const resultados = await Promise.allSettled(copias.map(async (c) => {
-    const canal = await client.channels.fetch(c.canalId);
-    const m = await canal.messages.fetch(c.msgId);
-    await m.delete();
-  }));
-  await MensagemGlobal.deleteMany({ grupoId: gId });
-  return resultados.filter((r) => r.status === 'fulfilled').length;
+  const resultados = await Promise.allSettled(copias.map((c) => apagarMensagem(c.canalId, c.msgId)));
+
+  const resolvidas = [];
+  let apagadas = 0;
+  let pendentes = 0;
+  resultados.forEach((r, i) => {
+    const c = copias[i];
+    if (r.status === 'fulfilled') {
+      resolvidas.push(c.msgId);
+      if (r.value === 'apagada') apagadas++;
+    } else if (erroPermanente(r.reason)) {
+      resolvidas.push(c.msgId);
+      log.warn('SYNC', `Não foi possível apagar a cópia ${c.msgId} no servidor ${c.guildId} (${errMsg(r.reason)}); vínculo removido.`);
+    } else {
+      pendentes++;
+      log.warn('SYNC', `Falha ao apagar a cópia ${c.msgId} no servidor ${c.guildId} (${errMsg(r.reason)}); vínculo mantido.`);
+    }
+  });
+
+  if (pendentes === 0) {
+    await MensagemGlobal.deleteMany({ grupoId: gId });
+  } else if (resolvidas.length > 0) {
+    await MensagemGlobal.deleteMany({ msgId: { $in: resolvidas } });
+  }
+  return apagadas;
 }
 
 async function sincronizarEdicao(antiga, nova) {
@@ -48,14 +70,13 @@ async function sincronizarEdicao(antiga, nova) {
   const embed = montarEmbedGlobal(completa, info);
   const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
 
+  const corpoEdicao = { embeds: [embed.toJSON()] };
   const resultados = await Promise.allSettled(copias.map(async (c) => {
-    const canal = await client.channels.fetch(c.canalId);
-    const m = await canal.messages.fetch(c.msgId);
     if (motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
-      await m.delete();
+      await apagarMensagem(c.canalId, c.msgId);
       return 'removida';
     }
-    await m.edit({ embeds: [embed] });
+    await editarMensagem(c.canalId, c.msgId, corpoEdicao);
     return 'editada';
   }));
 

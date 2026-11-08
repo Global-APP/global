@@ -6,7 +6,8 @@
   "scripts": {
     "start": "bun index.js",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@fluxerjs/core": "latest",

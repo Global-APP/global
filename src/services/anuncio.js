@@ -1,10 +1,9 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
-const { client } = require('../lib/client');
 const { COR_PADRAO_ANUNCIO } = require('../config');
 const Anuncio = require('../models/Anuncio');
 const { tratarFalhaDestino, registrarSucessoDestino, listarDestinosAtivos } = require('./destinos');
 const { log } = require('../util/logger');
-const { marcarEnvio } = require('../util/ratelimit');
+const { enviarMensagem } = require('./entrega/transporte');
 
 const CHAVE = 'global';
 
@@ -72,24 +71,24 @@ function montarEmbedAnuncio(a) {
 async function enviarAnuncioParaTodos(anuncio) {
   const embed = montarEmbedAnuncio(anuncio);
   const destinos = await listarDestinosAtivos();
+
+  // Passa pela fila de entrega, então um anúncio para N servidores não vira rajada de N requests.
+  const resultados = await Promise.allSettled(
+    destinos.map(({ canalId }) => enviarMensagem(canalId, { embeds: [embed] }))
+  );
+
   let enviados = 0;
-  for (const { guildId, canalId } of destinos) {
-    try {
-      /** @type {any} */
-      const canal = await client.channels.fetch(canalId);
-      if (canal) {
-        marcarEnvio(canalId);
-        await canal.send({ embeds: [embed] });
-        enviados++;
-        registrarSucessoDestino(guildId);
-      } else {
-        await tratarFalhaDestino(guildId, new Error('canal não encontrado'));
-      }
-    } catch (e) {
-      log.error('ANUNCIO', `Falha ao enviar para o servidor ${guildId}`, e);
-      await tratarFalhaDestino(guildId, e);
+  await Promise.allSettled(resultados.map(async (r, i) => {
+    const { guildId } = destinos[i];
+    if (r.status === 'fulfilled') {
+      enviados++;
+      registrarSucessoDestino(guildId);
+    } else {
+      log.error('ANUNCIO', `Falha ao enviar para o servidor ${guildId}`, r.reason);
+      await tratarFalhaDestino(guildId, r.reason);
     }
-  }
+  }));
+
   log.info('ANUNCIO', `Anúncio enviado para ${enviados}/${destinos.length} servidor(es).`);
   return enviados;
 }

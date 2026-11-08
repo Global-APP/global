@@ -4,7 +4,12 @@ const janelaEnvios = new Map();
 
 let ultimoLogRL = 0;
 
-const relaysAtivos = 0;
+// A fila de entrega registra aqui o seu contador real (em voo + pendentes).
+let contadorRelays = () => 0;
+
+function definirContadorRelays(fn) {
+  contadorRelays = fn;
+}
 
 function marcarEnvio(canalId) {
   const k = String(canalId);
@@ -71,13 +76,14 @@ function logRateLimit(e, ctx = '', canalId = null) {
   const contagem =
     `nossos sends em 10s: total=${totalEnviosNaJanela()}` +
     (canalId ? `, canal ${canalId}=${enviosNaJanela(canalId)}` : '') +
-    ` | relays em andamento=${relaysAtivos}`;
+    ` | entregas em voo+pendentes=${contadorRelays()}`;
 
   log.warn('RATELIMIT', `${ctx} | ${contagem}`, json);
 }
 
-setInterval(() => {
+const limpezaJanela = setInterval(() => {
   for (const k of janelaEnvios.keys()) if (enviosNaJanela(k) === 0) janelaEnvios.delete(k);
 }, 60_000);
+if (typeof limpezaJanela.unref === 'function') limpezaJanela.unref();
 
-module.exports = { marcarEnvio, logRateLimit };
+module.exports = { marcarEnvio, logRateLimit, ehRateLimit, definirContadorRelays };
