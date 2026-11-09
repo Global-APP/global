@@ -17,7 +17,6 @@ const { infoMensagem, montarEmbedGlobal } = require('./mensagem');
 
 const cooldownUsuarios = new Map();
 
-// grupoId -> { cancelado }. Permite abortar a retransmissão se a original for apagada no meio dela.
 const retransmissoesEmAndamento = new Map();
 
 function cancelarRetransmissao(grupoId) {
@@ -59,10 +58,8 @@ async function retransmitirMensagemGlobal(message) {
       log.warn('COOLDOWN', `${descreverContexto(message)} bloqueado (${tempoRestante}s restantes)`);
       try {
         await reagir(message, [emojis.error]);
-        const msgAviso = await message.channel.send(`<:forbidline:1562606683371339778> ${autor}, calma. Aguarde **${tempoRestante}s** para enviar outra mensagem.`);
-        setTimeout(() => msgAviso.delete().catch(() => {}), 4000);
       } catch (e) {
-        log.error('COOLDOWN', 'Erro ao avisar usuário', e);
+        log.error('COOLDOWN', 'Erro ao reagir à mensagem bloqueada', e);
       }
       return;
     }
@@ -91,13 +88,11 @@ async function retransmitirMensagemGlobal(message) {
   const refId = message.messageReference ? message.messageReference.messageId : null;
   let grupoRespondido = null;
   let origemReply = null;
-  /** @type {Map<string, any>} */
   const copiasDoRespondido = new Map();
   if (refId) {
     const r = await MensagemGlobal.findOne({ msgId: String(refId) }).select('grupoId').lean();
     if (r) {
       grupoRespondido = r.grupoId;
-      // Uma consulta traz a cópia de cada servidor, em vez de um findOne por destino.
       const linhasDoGrupo = await MensagemGlobal.find({ grupoId: grupoRespondido }).lean();
       for (const l of linhasDoGrupo) {
         copiasDoRespondido.set(l.guildId, l);
@@ -115,18 +110,15 @@ async function retransmitirMensagemGlobal(message) {
   const estado = { cancelado: false };
   retransmissoesEmAndamento.set(grupoId, estado);
 
-  // Cada destino entra na fila do seu canal; o scheduler controla concorrência e rate limit.
   let resultados;
   try {
     resultados = await Promise.allSettled(destinos.map((destino) => {
-      // Só no servidor onde o autor respondido enviou a mensagem, e nunca em auto-resposta.
       const mencao = (origemReply
         && destino.guildId === origemReply.guildId
         && origemReply.autorId !== String(autor.id))
         ? `<@${origemReply.autorId}>`
         : null;
 
-      // Libera explicitamente a menção (o ping:false do reply só suprime o ping do "respondido")
       const extraMencao = mencao
         ? { allowedMentions: { users: [origemReply.autorId], repliedUser: false } }
         : {};
@@ -138,7 +130,6 @@ async function retransmitirMensagemGlobal(message) {
       const alvoReply = grupoRespondido ? (copiasDoRespondido.get(destino.guildId) || null) : null;
 
       return enfileirar(destino.canalId, async () => {
-        // A original foi apagada antes deste envio sair: não há o que retransmitir.
         if (estado.cancelado) return null;
         marcarEnvio(destino.canalId);
 
@@ -154,9 +145,7 @@ async function retransmitirMensagemGlobal(message) {
             });
             comReply = true;
           } catch (e) {
-            // 429 não enviou nada: a fila espera o retry_after e repete o job inteiro.
             if (ehRateLimit(e)) throw e;
-            // A cópia alvo pode ter sido apagada neste servidor; reenvia sem reply.
             log.warn('GLOBAL', `Reply falhou no servidor ${destino.guildId}, enviando sem reply: ${errMsg(e)}`);
           }
         }
@@ -197,7 +186,6 @@ async function retransmitirMensagemGlobal(message) {
   });
 
   if (estado.cancelado) {
-    // O autor apagou a original durante o envio: remove as cópias que já saíram e não grava vínculos.
     const jaEnviadas = linhas.filter((l) => l.msgId !== grupoId);
     await Promise.allSettled(jaEnviadas.map((l) => apagarMensagem(l.canalId, l.msgId)));
     await Promise.allSettled(tratamentos);
