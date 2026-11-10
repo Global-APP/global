@@ -116,7 +116,7 @@ test('operação idempotente repete falha transitória e para em erro permanente
 
 test('dedupe: edições repetidas na fila viram uma só, com a última versão', async () => {
   const usados = [];
-  const bloqueio = enfileirar('canal-dedupe', () => dormir(40)); // segura a fila do canal
+  const bloqueio = enfileirar('canal-dedupe', () => dormir(40));
   const p1 = enfileirar('canal-dedupe', async () => { usados.push('v1'); return 'v1'; }, { dedupe: 'edit:1' });
   const p2 = enfileirar('canal-dedupe', async () => { usados.push('v2'); return 'v2'; }, { dedupe: 'edit:1' });
   const p3 = enfileirar('canal-dedupe', async () => { usados.push('v3'); return 'v3'; }, { dedupe: 'edit:1' });
@@ -143,7 +143,6 @@ test('prioridade alta passa na frente, sem starvation do normal', async () => {
   await Promise.all([...altas, normal]);
   assert.equal(ordem.length, 9);
   assert.equal(ordem[0], 'a0', 'alta passa na frente');
-  // depois de 5 altas seguidas, o normal precisa passar antes das altas restantes
   assert.equal(ordem.indexOf('n'), 5, `ordem: ${ordem.join(',')}`);
 });
 

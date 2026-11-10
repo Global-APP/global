@@ -4,7 +4,6 @@ const janelaEnvios = new Map();
 
 let ultimoLogRL = 0;
 
-// A fila de entrega registra aqui o seu contador real (em voo + pendentes).
 let contadorRelays = () => 0;
 
 function definirContadorRelays(fn) {

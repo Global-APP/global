@@ -1,9 +1,26 @@
 const { EmbedBuilder } = require('@fluxerjs/core');
 const { client } = require('../../lib/client');
-const { DONO_ID, MUBI_ID, COR_EMBED_MUBI, ROTULO_BADGE } = require('../../config');
+const { DONO_ID, MUBI_ID, COR_EMBED_MUBI, ROTULO_BADGE, ehDev, NOME_WEBHOOK_MAX } = require('../../config');
 const Guild = require('../../models/Guild');
 const User = require('../../models/User');
 const { corDaBadge, badgeAtiva } = require('../badges');
+
+const CONTEUDO_MAX = 2000;
+const RESERVA_MENCAO = 40;
+
+function escaparMarkdown(texto) {
+  return String(texto).replace(/[\\`*_~|[\]<>]/g, '\\$&');
+}
+
+function montarNomeWebhook(nickname, username, discriminator, rotulo) {
+  const tag = discriminator === undefined || discriminator === null ? '' : `#${discriminator}`;
+  const sufixo = ` (@${username}${tag})${rotulo ? ` — ${rotulo}` : ''}`;
+  const espaco = NOME_WEBHOOK_MAX - sufixo.length;
+
+  let nick = String(nickname);
+  if (nick.length > espaco) nick = espaco > 1 ? `${nick.slice(0, espaco - 1)}…` : nick.slice(0, 1);
+  return `${nick}${sufixo}`.slice(0, NOME_WEBHOOK_MAX);
+}
 
 function obterIconeServidor(g) {
   if (!g) return null;
@@ -73,7 +90,38 @@ async function infoMensagem(message) {
     }
   }
 
-  return { guildId, nomeServidor, iconeServidor, authorText, corEmbed, urlMidia };
+  const rotulo = ehDev(autor.id) ? ROTULO_BADGE.developer : (badge ? ROTULO_BADGE[badge] : null);
+  const nomeWebhook = montarNomeWebhook(nickname, username, autor.discriminator, rotulo);
+  const perfilUrl = `https://web.fluxer.app/users/${autor.id}`;
+  const avatarUrl = autor.displayAvatarURL ? autor.displayAvatarURL() : null;
+
+  return { guildId, nomeServidor, iconeServidor, authorText, corEmbed, urlMidia, nomeWebhook, perfilUrl, avatarUrl };
+}
+
+function montarConteudoWebhook(message, info, links = []) {
+  const rodape = `-# ${escaparMarkdown(info.nomeServidor)} — [Ver perfil](${info.perfilUrl})`;
+  const texto = [message.content || '', ...links].filter(Boolean).join('\n');
+  const limite = CONTEUDO_MAX - rodape.length - RESERVA_MENCAO;
+  const corpo = texto.length > limite ? `${texto.slice(0, limite - 1)}…` : texto;
+  return [corpo, rodape].filter(Boolean).join('\n');
+}
+
+function montarPayloadWebhook(message, info, anexos = { arquivos: [], links: [] }) {
+  const payload = {
+    username: info.nomeWebhook,
+    content: montarConteudoWebhook(message, info, anexos.links),
+    allowedMentions: { parse: [] }
+  };
+  if (info.avatarUrl) payload.avatarUrl = info.avatarUrl;
+  if (anexos.arquivos.length > 0) payload.files = anexos.arquivos;
+  return payload;
+}
+
+function montarCorpoEdicaoWebhook(message, info) {
+  return {
+    content: montarConteudoWebhook(message, info),
+    allowedMentions: { parse: [] }
+  };
 }
 
 function montarEmbedGlobal(message, info) {
@@ -92,4 +140,4 @@ function montarEmbedGlobal(message, info) {
   return embed;
 }
 
-module.exports = { infoMensagem, montarEmbedGlobal };
+module.exports = { infoMensagem, montarEmbedGlobal, montarPayloadWebhook, montarCorpoEdicaoWebhook };
