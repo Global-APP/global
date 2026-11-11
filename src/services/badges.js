@@ -16,7 +16,9 @@ const APELIDOS = {
   partner: 'partner',
   staff: 'staff',
   verificado: 'verified',
-  verified: 'verified'
+  verified: 'verified',
+  contribuidor: 'contributor',
+  contributor: 'contributor'
 };
 
 function resolverBadge(texto) {

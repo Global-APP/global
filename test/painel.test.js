@@ -5,9 +5,14 @@ const H = require('./harness/falsos');
 H.instalarApi(H.criarApi());
 
 const Guild = require('../src/models/Guild');
-const { textoPainel, acaoDaReacao, tratarReacaoPainel, REACAO_WEBHOOK, REACAO_ICONE } = require('../src/services/configPainel');
+const { textoPainel, acaoDaReacao, tratarReacaoPainel, emojiParaAPI, REACAO_WEBHOOK, REACAO_ICONE } = require('../src/services/configPainel');
 
 const silencioso = { debug() {}, info() {}, warn() {}, ok() {}, error() {} };
+
+function emojiRecebido(emoji) {
+  const m = emoji.match(/^<a?:([^:]+):(\d+)>$/);
+  return m ? { name: m[1], id: m[2] } : { name: emoji };
+}
 
 function reacao(emoji, userId = 'dono-painel') {
   const painel = {
@@ -18,7 +23,7 @@ function reacao(emoji, userId = 'dono-painel') {
     removeReaction: async (e, u) => { painel.removidas.push([e, u]); },
     edit: async (corpo) => { painel.edicoes.push(corpo); }
   };
-  return { painel, payload: { userId, guildId: 'g1', messageId: 'painel-1', message: painel, emoji: { name: emoji } } };
+  return { painel, payload: { userId, guildId: 'g1', messageId: 'painel-1', message: painel, emoji: emojiRecebido(emoji) } };
 }
 
 const deps = (extra = {}) => ({
@@ -46,10 +51,10 @@ test('texto do painel mostra habilitado/desabilitado com os toggles', () => {
   assert.match(desligado, /g\.conectar/);
 });
 
-test('reconhece as reações do painel com e sem variação de emoji', () => {
-  assert.equal(acaoDaReacao({ name: REACAO_WEBHOOK }), 'webhook');
-  assert.equal(acaoDaReacao({ name: REACAO_ICONE }), 'icone');
-  assert.equal(acaoDaReacao({ name: '🖼' }), 'icone');
+test('reconhece as reações personalizadas do painel pelo id', () => {
+  assert.equal(acaoDaReacao(emojiRecebido(REACAO_WEBHOOK)), 'webhook');
+  assert.equal(acaoDaReacao(emojiRecebido(REACAO_ICONE)), 'icone');
+  assert.equal(acaoDaReacao({ name: 'imagefill', id: '1' }), null);
   assert.equal(acaoDaReacao({ name: '👍' }), null);
 });
 
@@ -59,7 +64,7 @@ test('reagir alterna o modo webhook, remove a reação e atualiza o painel', asy
 
   assert.equal(await tratarReacaoPainel(payload, deps()), true);
   assert.equal(H.dados.get('Guild')[0].modoEnvio, 'webhook');
-  assert.deepEqual(painel.removidas, [[REACAO_WEBHOOK, 'dono-painel']]);
+  assert.deepEqual(painel.removidas, [[emojiParaAPI(REACAO_WEBHOOK), 'dono-painel']]);
   assert.equal(painel.edicoes.length, 1);
   assert.match(painel.edicoes[0].embeds[0].toJSON().description, /Modo webhook\*\* · habilitado/);
 

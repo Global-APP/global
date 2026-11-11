@@ -15,17 +15,19 @@ const COR_BADGE = {
   developer: 0x4facfe,
   partner: 0xf9a11b,
   verified: 0x3b9bf5,
+  contributor: 0xf86b70,
   active: 0x4ade5f
 };
 
-const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'verified', 'active'];
+const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'contributor', 'verified', 'active'];
 
 const ROTULO_BADGE = {
   active: 'Conversador',
   developer: 'Desenvolvedor',
   partner: 'Parceiro',
   staff: 'Staff',
-  verified: 'Verificado'
+  verified: 'Verificado',
+  contributor: 'Contribuidor'
 };
 
 const CONVERSADOR_MENSAGENS = 100;

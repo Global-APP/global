@@ -8,7 +8,8 @@ const badges = {
     developer: "<:developer:1563670318453628929>",
     partner: "<:parceiro:1563670318453628930>",
     staff: "<:staff:1563670318453628931>",
-    verified: "<:verificado:1563670318453628932>"
+    verified: "<:verificado:1563670318453628932>",
+    contributor: "<:contribuidor:1564813701633015808>"
 }
 
 module.exports = { emojis, badges };
