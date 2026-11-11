@@ -21,7 +21,7 @@ module.exports = {
     const gId = String(guildId);
     const r = await Guild.updateOne(
       { guildId: gId, canalId: { $ne: null } },
-      { canalId: null, pausado: false, filtrarPalavroes: false, filtrarLinks: false }
+      { canalId: null, pausado: false, filtrarPalavroes: true, filtrarLinks: false }
     );
     limparFalhasDestino(gId);
     if (r.matchedCount > 0) {

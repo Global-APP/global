@@ -52,7 +52,7 @@ async function carregarDestinosAtivos() {
     .map((g) => ({
       guildId: g.guildId,
       canalId: g.canalId,
-      filtrarPalavroes: !!g.filtrarPalavroes,
+      filtrarPalavroes: g.filtrarPalavroes !== false,
       filtrarLinks: !!g.filtrarLinks,
       webhookId: g.webhookId || null,
       webhookToken: g.webhookToken || null,

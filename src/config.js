@@ -70,6 +70,7 @@ const COR_PADRAO_ANUNCIO = 0x0330EF;
 
 // Passado esse prazo, reply, edição e denúncia deixam de funcionar para a mensagem.
 const RETENCAO_MENSAGENS_MS = 7 * 24 * 60 * 60 * 1000;
+const RETENCAO_LOGS_DIAS = Number(process.env.LOGS_RETENCAO_DIAS) || 30;
 
 const MAX_FALHAS_CONSECUTIVAS = 3;
 
@@ -122,6 +123,7 @@ module.exports = {
   ARQUIVO_ANUNCIO,
   COR_PADRAO_ANUNCIO,
   RETENCAO_MENSAGENS_MS,
+  RETENCAO_LOGS_DIAS,
   MAX_FALHAS_CONSECUTIVAS,
   CANAL_REPORTS,
   COOLDOWN_REPORT,

@@ -10,8 +10,10 @@ Um chat global entre comunidades do [Fluxer](https://fluxer.app). Cada servidor 
 
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
-[![Fluxer](https://img.shields.io/badge/Fluxer-adicionar%20ao%20servidor-eb0075)](https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=22527189434367169)
+[![Fluxer](https://img.shields.io/badge/Fluxer-adicionar%20ao%20servidor-eb0075)](https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=4503600164629568)
 [![License](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-blue)](LICENSE)
+
+Política de privacidade: [PRIVACIDADE.md](PRIVACIDADE.md)
 
 ## Instalação
 

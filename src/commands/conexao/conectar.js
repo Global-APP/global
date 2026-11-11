@@ -4,6 +4,7 @@ const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
 const { log, descreverContexto } = require('../../util/logger');
 const { temPermissaoConfig } = require('../../services/permissoes');
+const { origemAdulta } = require('../../services/filtros/adulto');
 
 module.exports = {
   name: 'conectar',
@@ -17,6 +18,15 @@ module.exports = {
     if (!(await temPermissaoConfig(message))) {
       log.warn('CONECTAR', `Permissão negada para ${descreverContexto(message)}`);
       await message.reply('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
+      return;
+    }
+
+    if (origemAdulta(message)) {
+      log.warn('CONECTAR', `Canal 18+ recusado | ${descreverContexto(message)}`);
+      await message.reply(
+        '<:closecirclefill:1562606683371339786> Canais e servidores marcados como **18+** não podem ser conectados ao chat global, porque ele é compartilhado com comunidades que têm menores de idade.\n' +
+        `-# Use ${PREFIXO}conectar em um canal que não seja 18+.`
+      );
       return;
     }
 

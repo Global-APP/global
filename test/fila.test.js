@@ -1,9 +1,10 @@
 process.env.ENTREGA_CONCORRENCIA = '3';
 process.env.ENTREGA_REQS_POR_SEGUNDO = '1000';
+process.env.ENTREGA_TIMEOUT_MS = '300';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { enfileirar, cancelarPendente, estatisticas } = require('../src/services/entrega/fila');
+const { enfileirar, cancelarPendente, estatisticas, liberarBloqueio } = require('../src/services/entrega/fila');
 
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -151,4 +152,32 @@ test('backlog zera quando tudo termina', async () => {
   const s = estatisticas();
   assert.equal(s.pendentes, 0);
   assert.equal(s.emVoo, 0);
+});
+
+test('429 com espera de horas pausa todos os envios, descarta a fila e recusa novos até liberar', async () => {
+  let chamadas = 0;
+  const falha = erro429(3597);
+  const primeiro = enfileirar('canal-a', async () => { chamadas++; throw falha; });
+  const segundo = enfileirar('canal-a', async () => { chamadas++; return 'x'; });
+  const terceiro = enfileirar('canal-b', async () => { chamadas++; return 'y'; });
+
+  const resultados = await Promise.allSettled([primeiro, segundo, terceiro]);
+  assert.ok(resultados.filter((r) => r.status === 'rejected').length >= 2);
+  assert.equal(resultados[0].status, 'rejected');
+  assert.equal(resultados[1].status, 'rejected');
+
+  const antes = chamadas;
+  await assert.rejects(enfileirar('canal-c', async () => { chamadas++; }), (e) => e === falha);
+  assert.equal(chamadas, antes);
+  assert.equal(estatisticas().pendentes, 0);
+
+  liberarBloqueio();
+  assert.equal(await enfileirar('canal-c', async () => 'ok'), 'ok');
+});
+
+test('envio que nunca responde estoura o tempo e libera a vaga', async () => {
+  const travado = enfileirar('canal-travado', () => new Promise(() => {}));
+  await assert.rejects(travado, /sem resposta/);
+  assert.equal(estatisticas().emVoo, 0);
+  assert.equal(await enfileirar('canal-travado', async () => 'ok'), 'ok');
 });

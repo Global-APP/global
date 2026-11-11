@@ -5,6 +5,7 @@ const MensagemGlobal = require('../../models/MensagemGlobal');
 const { contarMensagemParaAnuncio } = require('../anuncio');
 const { tratarFalhaDestino, registrarSucessoDestino, listarDestinosAtivos } = require('../destinos');
 const { checarMidia } = require('../filtros/nsfw');
+const { origemAdulta } = require('../filtros/adulto');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild, bloquearPorFiltro } = require('../filtros/moderacao');
 const { verificarSpam } = require('../filtros/spam');
 const { log, errMsg, descreverContexto } = require('../../util/logger');
@@ -46,6 +47,12 @@ async function retransmitirMensagemGlobal(message) {
   const bloqueado = (await estaBloqueado('usuario', autor.id)) || (await estaBloqueado('servidor', guildIdOrigem));
   if (bloqueado) {
     log.warn('BAN', `Mensagem bloqueada de ${descreverContexto(message)}`);
+    await reagir(message, [emojis.error]);
+    return;
+  }
+
+  if (origemAdulta(message)) {
+    log.warn('GLOBAL', `Mensagem de canal 18+ não retransmitida | ${descreverContexto(message)}`);
     await reagir(message, [emojis.error]);
     return;
   }

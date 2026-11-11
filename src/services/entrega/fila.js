@@ -8,6 +8,8 @@ const MAX_TENTATIVAS_429 = 8;
 const MAX_TENTATIVAS_ERRO = 3;
 const ESPERA_MIN_MS = 50;
 const ESPERA_MAX_MS = 60_000;
+const BLOQUEIO_MAX_MS = 3_600_000;
+const TEMPO_MAX_JOB_MS = Number(process.env.ENTREGA_TIMEOUT_MS) || 45_000;
 const ESPERA_429_PADRAO_MS = 1000;
 const MAX_ALTAS_SEGUIDAS = 5;
 const INTERVALO_METRICAS_MS = 60_000;
@@ -22,6 +24,8 @@ const destinos = new Map();
 let emVoo = 0;
 let pendentes = 0;
 let globalPausadoAte = 0;
+let bloqueadoAte = 0;
+let bloqueio = null;
 let taxaAtual = TAXA_MAXIMA;
 let ultimoCorteTaxa = 0;
 let ultimoAjusteTaxa = 0;
@@ -214,10 +218,50 @@ function reenfileirarNaFrente(destino, job) {
   pendentes++;
 }
 
+function bloquearTudo(erro, limite) {
+  const espera = Math.min(BLOQUEIO_MAX_MS, limite.retryAfterMs);
+  bloqueadoAte = Date.now() + espera;
+  bloqueio = erro;
+
+  let descartados = 0;
+  for (const destino of destinos.values()) {
+    for (const faixa of [destino.alta, destino.normal]) {
+      for (const job of faixa.splice(0)) {
+        pendentes--;
+        descartados++;
+        metricas.falhas++;
+        job.reject(erro);
+      }
+    }
+    destino.pendentesPorDedupe.clear();
+  }
+
+  log.warn(
+    'ENTREGA',
+    `A API bloqueou o bot por ${Math.round(espera / 1000)}s. Envios pausados, ${descartados} pendente(s) descartado(s); novos envios serão recusados até liberar.`
+  );
+}
+
+function bloqueioAtivo() {
+  return bloqueadoAte > Date.now();
+}
+
+function liberarBloqueio() {
+  bloqueadoAte = 0;
+  bloqueio = null;
+}
+
 function tratarRateLimit(destino, job, erro, limite) {
   metricas.rate429++;
   reduzirTaxa(Date.now());
   logar429(destino.chave, limite, job, erro);
+
+  if (limite.retryAfterMs > ESPERA_MAX_MS) {
+    metricas.falhas++;
+    job.reject(erro);
+    bloquearTudo(erro, limite);
+    return;
+  }
 
   const espera = Math.min(ESPERA_MAX_MS, Math.max(ESPERA_MIN_MS, limite.retryAfterMs)) + Math.floor(Math.random() * 100);
   if (limite.global) globalPausadoAte = Math.max(globalPausadoAte, Date.now() + espera);
@@ -246,11 +290,23 @@ function tratarErro(destino, job, erro) {
   reenfileirarNaFrente(destino, job);
 }
 
+function comLimiteDeTempo(promessa) {
+  let timer;
+  const limite = new Promise((_, rejeitar) => {
+    timer = setTimeout(() => {
+      const e = new Error(`Envio sem resposta após ${TEMPO_MAX_JOB_MS / 1000}s`);
+      e.name = 'TimeoutError';
+      rejeitar(e);
+    }, TEMPO_MAX_JOB_MS);
+  });
+  return Promise.race([promessa, limite]).finally(() => clearTimeout(timer));
+}
+
 async function executar(destino, job) {
   const inicio = Date.now();
   metricas.requisicoes++;
   try {
-    const resultado = await job.fn();
+    const resultado = await comLimiteDeTempo(job.fn());
     metricas.sucessos++;
     metricas.latenciaTotalMs += Date.now() - inicio;
     job.resolve(resultado);
@@ -268,6 +324,11 @@ async function executar(destino, job) {
 function enfileirar(chave, fn, opcoes = {}) {
   const destino = destinoDe(String(chave));
   const { prioridade = 'normal', dedupe = null, idempotente = false } = opcoes;
+
+  if (bloqueadoAte > Date.now()) {
+    metricas.falhas++;
+    return Promise.reject(bloqueio);
+  }
 
   if (dedupe) {
     const existente = destino.pendentesPorDedupe.get(dedupe);
@@ -332,4 +393,4 @@ definirContadorRelays(() => emVoo + pendentes);
 const intervaloMetricas = setInterval(registrarMetricas, INTERVALO_METRICAS_MS);
 if (typeof intervaloMetricas.unref === 'function') intervaloMetricas.unref();
 
-module.exports = { enfileirar, cancelarPendente, estatisticas, statusDe };
+module.exports = { enfileirar, cancelarPendente, estatisticas, statusDe, bloqueioAtivo, liberarBloqueio };
