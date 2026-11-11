@@ -5,23 +5,32 @@ const EXT_AUDIO = /\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|wma|amr|mid|midi)$/i;
 
 const EXT_MIDIA = /\.(png|jpe?g|gif|webp|avif|bmp|tiff?|mp4|webm|mov|mkv|avi)$/i;
 
-// Só o 1º anexo importa: é o único que o global retransmite.
-function midiaParaVerificar(message) {
-  const atts = message.attachments;
-  if (!atts || atts.size === 0) return null;
-  const a = atts.first();
-  const url = a && a.url;
-  if (!url) return null;
+const MAX_MIDIAS_VERIFICADAS = 10;
 
-  const tipo = String(a.contentType || a.content_type || '').toLowerCase();
-  const nome = String(a.filename || a.name || '');
+function listar(itens) {
+  if (!itens) return [];
+  if (Array.isArray(itens)) return itens;
+  if (typeof itens.values === 'function') return [...itens.values()];
+  return [];
+}
+
+function ehMidiaVerificavel(item) {
+  const url = item && item.url;
+  if (!url) return false;
+
+  const tipo = String(item.contentType || item.content_type || '').toLowerCase();
+  const nome = String(item.filename || item.name || '');
   let caminho;
   try { caminho = new URL(url).pathname; } catch (_) { caminho = String(url); }
 
-  if (tipo.startsWith('audio/') || EXT_AUDIO.test(caminho) || EXT_AUDIO.test(nome)) return null;
+  if (tipo.startsWith('audio/') || EXT_AUDIO.test(caminho) || EXT_AUDIO.test(nome)) return false;
+  return tipo.startsWith('image/') || tipo.startsWith('video/') || EXT_MIDIA.test(caminho);
+}
 
-  if (tipo.startsWith('image/') || tipo.startsWith('video/') || EXT_MIDIA.test(caminho)) return url;
-  return null;
+function midiasParaVerificar(message) {
+  const anexos = listar(message.attachments).filter(ehMidiaVerificavel);
+  const figurinhas = listar(message.stickers).filter((f) => f && f.url && !/\.json(\?|$)/i.test(f.url));
+  return [...anexos, ...figurinhas].map((m) => String(m.url)).slice(0, MAX_MIDIAS_VERIFICADAS);
 }
 
 /**
@@ -49,10 +58,7 @@ async function consultarServicoNsfw(url) {
   return dados;
 }
 
-async function checarMidia(message) {
-  const url = midiaParaVerificar(message);
-  if (!url) return null;
-
+async function checarUrl(message, url) {
   try {
     const r = await consultarServicoNsfw(url);
     log.info('NSFW', `${r.tipo} score=${r.score} ${r.nsfw ? 'BLOQUEADA' : 'ok'} em ${r.ms}ms${r.cache ? ' (cache)' : ''} | ${descreverContexto(message)}`);
@@ -64,6 +70,14 @@ async function checarMidia(message) {
     if (e.status === 415) return 'tipo de mídia não suportado';
     return 'não consegui verificar a mídia, tente novamente';
   }
+}
+
+async function checarMidia(message) {
+  for (const url of midiasParaVerificar(message)) {
+    const motivo = await checarUrl(message, url);
+    if (motivo) return motivo;
+  }
+  return null;
 }
 
 module.exports = { checarMidia };

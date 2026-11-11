@@ -6,7 +6,7 @@ const guildSchema = new Schema(
     guildId: { type: String, required: true, unique: true },
     canalId: { type: String, default: null },
     pausado: { type: Boolean, default: false },
-    filtrarPalavroes: { type: Boolean, default: false },
+    filtrarPalavroes: { type: Boolean, default: true },
     filtrarLinks: { type: Boolean, default: false },
     cor: { type: Number, default: null },
     mostrarIcone: { type: Boolean, default: false },

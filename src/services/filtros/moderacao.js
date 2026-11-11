@@ -13,7 +13,7 @@ function analisarConteudo(texto) {
 async function configDaGuild(guildId) {
   const row = await Guild.findOne({ guildId: String(guildId) }).lean();
   return {
-    filtrarPalavroes: !!(row && row.filtrarPalavroes),
+    filtrarPalavroes: !row || row.filtrarPalavroes !== false,
     filtrarLinks: !!(row && row.filtrarLinks)
   };
 }
