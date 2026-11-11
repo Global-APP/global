@@ -8,21 +8,36 @@ const { log, errMsg } = require('../util/logger');
 const EMOJI_LIGADO = '<:togglefill:1562606683371339783>';
 const EMOJI_DESLIGADO = '<:toggleline:1562606683371339782>';
 const EMOJI_INFO = '<:information2fill:1562606683371339784>';
-const EMOJI_DICA = '<:brushaifill:1562606683371339785>';
 const EMOJI_ERRO = '<:errorwarningfill:1563362758655746048>';
 const EMOJI_SUCESSO = '<:checkboxcirclefill:1562606683371339777>';
 
-const REACAO_WEBHOOK = '🪝';
-const REACAO_ICONE = '🖼️';
+const REACAO_WEBHOOK = '<:chat1fill:1569877160041132032>';
+const REACAO_ICONE = '<:imagefill:1569878138362535939>';
+
+const PADRAO_CUSTOMIZADO = /^<a?:([^:]+):(\d+)>$/;
 
 function semVariacao(emoji) {
-  return String(emoji || '').replace(/️/g, '');
+  return String(emoji || '').replace(/\uFE0F/g, '');
+}
+
+function emojiParaAPI(emoji) {
+  const m = String(emoji).match(PADRAO_CUSTOMIZADO);
+  return m ? `${m[1]}:${m[2]}` : emoji;
+}
+
+function mesmoEmoji(recebido, configurado) {
+  const custom = configurado.match(PADRAO_CUSTOMIZADO);
+  if (custom) {
+    if (recebido && typeof recebido === 'object') return String(recebido.id) === custom[2];
+    return String(recebido || '').endsWith(`:${custom[2]}`);
+  }
+  const nome = recebido && typeof recebido === 'object' ? recebido.name : recebido;
+  return semVariacao(nome) === semVariacao(configurado);
 }
 
 function acaoDaReacao(emoji) {
-  const nome = semVariacao(emoji && typeof emoji === 'object' ? emoji.name : emoji);
-  if (nome === semVariacao(REACAO_WEBHOOK)) return 'webhook';
-  if (nome === semVariacao(REACAO_ICONE)) return 'icone';
+  if (mesmoEmoji(emoji, REACAO_WEBHOOK)) return 'webhook';
+  if (mesmoEmoji(emoji, REACAO_ICONE)) return 'icone';
   return null;
 }
 
@@ -45,6 +60,8 @@ function textoPainel(config = {}, feedback) {
   const canal = config.canalId ? `<#${config.canalId}>` : `não conectada, use \`${PREFIXO}conectar\``;
 
   return [
+    '# Configurações do Global',
+    '',
     linhaDeOpcao(
       webhookAtivo(config),
       'Modo webhook',
@@ -59,19 +76,18 @@ function textoPainel(config = {}, feedback) {
     '',
     `${EMOJI_INFO} Conexão global: ${canal}`,
     '',
-    `${EMOJI_DICA} Reaja para alternar: ${REACAO_WEBHOOK} Modo webhook · ${REACAO_ICONE} Ícone do servidor`,
+    `-# Reaja para alternar: ${REACAO_WEBHOOK} Modo webhook · ${REACAO_ICONE} Ícone do servidor`,
     ...(feedback ? ['', feedback] : [])
   ].join('\n');
 }
 
 function embedPainel(config = {}, feedback) {
   return new EmbedBuilder()
-    .setTitle('<:earthline1:1562606683371339780> Configurações do Global')
     .setDescription(textoPainel(config, feedback));
 }
 
 function reacoesDoPainel() {
-  return [REACAO_WEBHOOK, REACAO_ICONE];
+  return [REACAO_WEBHOOK, REACAO_ICONE].map(emojiParaAPI);
 }
 
 async function resolverMensagem(payload) {
@@ -153,7 +169,7 @@ async function tratarReacaoPainel(payload, deps = {}) {
 
     const emoji = acao === 'webhook' ? REACAO_WEBHOOK : REACAO_ICONE;
     try {
-      await message.removeReaction(emoji, userId);
+      await message.removeReaction(emojiParaAPI(emoji), userId);
     } catch (e) {
       api.log.warn('CONFIG', `Não consegui remover a reação do painel ${messageId}: ${errMsg(e)}`);
     }
@@ -182,6 +198,7 @@ module.exports = {
   REACAO_WEBHOOK,
   REACAO_ICONE,
   acaoDaReacao,
+  emojiParaAPI,
   webhookAtivo,
   iconeAtivo,
   textoPainel,
