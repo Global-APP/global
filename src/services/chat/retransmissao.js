@@ -1,5 +1,5 @@
 const { client } = require('../../lib/client');
-const { COOLDOWN_TEMPO } = require('../../config');
+const { COOLDOWN_TEMPO, MODO_ENVIO } = require('../../config');
 const { emojis } = require('../../util/emojis');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { contarMensagemParaAnuncio } = require('../anuncio');
@@ -12,12 +12,23 @@ const { ehStaffOuDono, estaBloqueado } = require('../permissoes');
 const { reagir } = require('../../util/reacoes');
 const { ehRateLimit, marcarEnvio } = require('../../util/ratelimit');
 const { enfileirar } = require('../entrega/fila');
-const { apagarMensagem } = require('../entrega/transporte');
-const { infoMensagem, montarEmbedGlobal } = require('./mensagem');
+const { apagarCopia, enviarPorWebhook } = require('../entrega/transporte');
+const { carregarCredenciais } = require('../webhooks');
+const { infoMensagem, montarEmbedGlobal, montarPayloadWebhook } = require('./mensagem');
+const { prepararAnexos } = require('./anexos');
 
 const cooldownUsuarios = new Map();
 
 const retransmissoesEmAndamento = new Map();
+
+function payloadWebhookDoDestino(base, mencao, origemReply) {
+  if (!mencao) return base;
+  return {
+    ...base,
+    content: `${mencao}\n${base.content}`,
+    allowedMentions: { parse: [], users: [origemReply.autorId], repliedUser: false }
+  };
+}
 
 function cancelarRetransmissao(grupoId) {
   const estado = retransmissoesEmAndamento.get(String(grupoId));
@@ -85,6 +96,14 @@ async function retransmitirMensagemGlobal(message) {
     embed = null;
   }
 
+  let payloadWebhookPronto = null;
+  const payloadWebhook = () => {
+    if (!payloadWebhookPronto) {
+      payloadWebhookPronto = prepararAnexos(message).then((anexos) => montarPayloadWebhook(message, info, anexos));
+    }
+    return payloadWebhookPronto;
+  };
+
   const refId = message.messageReference ? message.messageReference.messageId : null;
   let grupoRespondido = null;
   let origemReply = null;
@@ -131,6 +150,22 @@ async function retransmitirMensagemGlobal(message) {
 
       return enfileirar(destino.canalId, async () => {
         if (estado.cancelado) return null;
+
+        if ((destino.modoEnvio || MODO_ENVIO) === 'webhook') {
+          const base = await payloadWebhook();
+          const enviadaWebhook = await enviarPorWebhook(destino, payloadWebhookDoDestino(base, mencao, origemReply), alvoReply);
+          if (enviadaWebhook) {
+            if (!enviadaWebhook.mensagem || !enviadaWebhook.mensagem.id) throw new Error('Webhook não retornou a mensagem criada');
+            return {
+              guildId: destino.guildId,
+              canalId: destino.canalId,
+              msgId: enviadaWebhook.mensagem.id,
+              comReply: enviadaWebhook.comReply,
+              webhookId: enviadaWebhook.webhookId
+            };
+          }
+        }
+
         marcarEnvio(destino.canalId);
 
         let enviada;
@@ -177,7 +212,7 @@ async function retransmitirMensagemGlobal(message) {
       ok++;
       registrarSucessoDestino(r.value.guildId);
       if (r.value.comReply) replies++;
-      linhas.push({ grupoId, guildId: r.value.guildId, canalId: r.value.canalId, msgId: String(r.value.msgId), autorId: String(autor.id), criadoEm });
+      linhas.push({ grupoId, guildId: r.value.guildId, canalId: r.value.canalId, msgId: String(r.value.msgId), autorId: String(autor.id), webhookId: r.value.webhookId || null, criadoEm });
     } else {
       const motivo = r.status === 'rejected' ? errMsg(r.reason) : 'sem id de mensagem';
       falhas.push(`${destinos[i].guildId}: ${motivo}`);
@@ -187,7 +222,8 @@ async function retransmitirMensagemGlobal(message) {
 
   if (estado.cancelado) {
     const jaEnviadas = linhas.filter((l) => l.msgId !== grupoId);
-    await Promise.allSettled(jaEnviadas.map((l) => apagarMensagem(l.canalId, l.msgId)));
+    const credenciais = await carregarCredenciais(jaEnviadas.map((l) => l.guildId));
+    await Promise.allSettled(jaEnviadas.map((l) => apagarCopia(l, credenciais)));
     await Promise.allSettled(tratamentos);
     log.info('GLOBAL', `msg ${message.id} apagada durante a retransmissão | ${cancelados} envio(s) cancelado(s), ${jaEnviadas.length} cópia(s) já enviada(s) removida(s)`);
     return;

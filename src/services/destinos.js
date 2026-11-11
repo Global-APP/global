@@ -41,7 +41,7 @@ function registrarSucessoDestino(guildId) {
 
 async function carregarDestinosAtivos() {
   const [guilds, bloqueados] = await Promise.all([
-    Guild.find({ canalId: { $ne: null }, pausado: false }).lean(),
+    Guild.find({ canalId: { $ne: null }, pausado: false }).select('+webhookToken').lean(),
     Bloqueio.find({ tipo: 'servidor' }).distinct('id')
   ]);
 
@@ -53,11 +53,14 @@ async function carregarDestinosAtivos() {
       guildId: g.guildId,
       canalId: g.canalId,
       filtrarPalavroes: !!g.filtrarPalavroes,
-      filtrarLinks: !!g.filtrarLinks
+      filtrarLinks: !!g.filtrarLinks,
+      webhookId: g.webhookId || null,
+      webhookToken: g.webhookToken || null,
+      webhookCanalId: g.webhookCanalId || null,
+      modoEnvio: g.modoEnvio || null
     }));
 }
 
-// Em cache (invalidado por hooks dos models Guild/Bloqueio). Quem chama não deve mutar a lista.
 function listarDestinosAtivos() {
   return obterDestinos(carregarDestinosAtivos);
 }

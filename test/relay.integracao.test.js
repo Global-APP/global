@@ -10,8 +10,6 @@ const { retransmitirMensagemGlobal, cancelarRetransmissao } = require('../src/se
 const { apagarCopiasDoGrupo } = require('../src/services/chat/sincronizacao');
 const Guild = require('../src/models/Guild');
 
-// Os dados são trocados direto no "banco" em memória, então passa por um update real para o hook
-// dos models invalidar o cache de destinos, como acontece em produção.
 async function novoCenario(opcoes, destinos) {
   const api = H.criarApi(opcoes);
   H.instalarApi(api);
@@ -35,7 +33,6 @@ test('rajada: 100 servidores x 2 mensagens, limite global de 50/s, nada se perde
   ]);
   t.diagnostic(`envios aceitos=${api.aceitos} 429=${api.rate429} tempo=${Date.now() - t0}ms`);
 
-  // g1 e g2 são origem de uma das mensagens: recebem 1; os outros 98 recebem 2.
   const esperado = 98 * 2 + 2 * 1;
   assert.equal(api.copiasVivas().length, esperado, 'todas as cópias devem existir');
   for (const [canal, n] of api.envios) {
@@ -72,7 +69,6 @@ test('replies: resolve as cópias do grupo em lote (poucas queries, não uma por
 
 test('cache de destinos: 1 consulta para várias mensagens e invalida quando a config muda', async (t) => {
   const api = await novoCenario({ globalPorSegundo: 1000 }, 20);
-  // Força recarga: a invalidação por hook dos models zera o cache.
   await Guild.updateOne({ guildId: 'g1' }, { pausado: false });
   H.consultas.clear();
 
@@ -86,7 +82,6 @@ test('cache de destinos: 1 consulta para várias mensagens e invalida quando a c
   await Guild.updateOne({ guildId: 'g5' }, { pausado: true });
   await retransmitirMensagemGlobal(H.mensagemDe({ guildIdx: 1, conteudo: `apos pausar ${Math.random()}` }));
   assert.equal(consultasDe('Guild.find'), 2, 'depois de alterar a config deve recarregar');
-  // g5 pausou: o último envio não pode ter chegado nele.
   assert.equal(H.dados.get('Guild').find((g) => g.guildId === 'g5').pausado, true);
   const noC5 = [...api.mensagens.values()].filter((m) => m.canalId === 'c5').length;
   assert.equal(noC5, 5, 'g5 recebeu as 5 primeiras e não a que veio depois da pausa');
@@ -103,9 +98,9 @@ test('apagar grupo: só remove o vínculo de quem foi resolvido; falha transitó
     return msgId;
   };
   const normais = [1, 2, 3, 4, 5, 6, 7, 8].map(criarCopia);
-  const proibidas = [11, 12, 13].map(criarCopia); // 403: permissão revogada, repetir não resolve
-  const instaveis = [21, 22, 23].map(criarCopia); // 500: transitório
-  const sumidas = [31, 32].map((i) => { const id = criarCopia(i); api.mensagens.delete(`c${i}:${id}`); return id; }); // 404
+  const proibidas = [11, 12, 13].map(criarCopia);
+  const instaveis = [21, 22, 23].map(criarCopia);
+  const sumidas = [31, 32].map((i) => { const id = criarCopia(i); api.mensagens.delete(`c${i}:${id}`); return id; });
   proibidas.forEach((id) => api.falhasDelete.set(id, 403));
   instaveis.forEach((id) => api.falhasDelete.set(id, 500));
   H.dados.set('MensagemGlobal', linhas);

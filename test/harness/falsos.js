@@ -1,12 +1,8 @@
-// Dublês para testar o relay sem Fluxer nem MongoDB: um "mongoose" em memória, um SDK mínimo e
-// uma API falsa que aplica rate limit de verdade (bucket global + bucket por canal) e, como o SDK
-// real, NÃO repete POST/PATCH/DELETE sozinho: um 429 chega ao código como RateLimitError.
 const Module = require('node:module');
 const path = require('node:path');
 
 const SRC = path.resolve(__dirname, '../../src');
 
-// Timers de intervalo do projeto não podem segurar o processo de teste.
 const setIntervalReal = global.setInterval;
 global.setInterval = (fn, ms, ...a) => {
   const t = setIntervalReal(fn, ms, ...a);
@@ -14,9 +10,8 @@ global.setInterval = (fn, ms, ...a) => {
   return t;
 };
 
-// ---------- mongoose em memória ----------
-const dados = new Map(); // nome do model -> docs
-const consultas = new Map(); // nome.metodo -> contagem
+const dados = new Map();
+const consultas = new Map();
 
 function contar(nome, metodo) {
   const k = `${nome}.${metodo}`;
@@ -94,7 +89,6 @@ function criarModel(nome, schema) {
 
 const mongooseFalso = { Schema, model: (nome, schema) => criarModel(nome, schema), connect: async () => {}, connection: {} };
 
-// ---------- SDK mínimo ----------
 class EmbedBuilder {
   constructor() { this.data = {}; }
   setDescription(v) { this.data.description = v; return this; }
@@ -111,22 +105,27 @@ const coreFalso = {
   PermissionFlags: {},
   Events: {},
   Client: class {},
+  Webhook: {
+    fromToken: (_client, id, token, opcoes) => apiAtual.webhookFalso(id, token, opcoes.channelId)
+  },
   Routes: { channelMessage: (c, m) => `/channels/${c}/messages/${m}`, channelMessages: (c) => `/channels/${c}/messages` }
 };
 
-// ---------- API falsa com rate limit ----------
 function criarApi({ globalPorSegundo = 50, porCanal = { limite: 30, janelaMs: 60_000 } } = {}) {
   const api = {
     config: { globalPorSegundo, porCanal },
-    mensagens: new Map(), // `${canal}:${id}` -> { canalId, id, embeds }
-    envios: new Map(), // canalId -> quantidade de sends aceitos
-    falhasDelete: new Map(), // msgId -> status HTTP a devolver
+    mensagens: new Map(),
+    envios: new Map(),
+    falhasDelete: new Map(),
     rate429: 0,
     aceitos: 0,
     globalJanela: [],
     canalJanela: new Map(),
     proximoId: 1,
-    cargaExterna: 0 // requests "de outros comandos" que consomem o bucket global
+    cargaExterna: 0,
+    webhooks: new Map(),
+    criacaoWebhookFalha: false,
+    webhooksCriados: 0
   };
 
   function erro429(esperaMs, global) {
@@ -155,6 +154,42 @@ function criarApi({ globalPorSegundo = 50, porCanal = { limite: 30, janelaMs: 60
     api.aceitos++;
   }
 
+  function webhookFalso(id, token, canalId) {
+    const valido = () => {
+      const w = api.webhooks.get(String(id));
+      if (!w || w.token !== token) { const e = new Error('Unknown Webhook'); e.statusCode = 404; throw e; }
+    };
+    return {
+      id: String(id),
+      token,
+      async send(opcoes) {
+        await latencia();
+        valido();
+        consumir(String(canalId));
+        const msgId = `w${api.proximoId++}`;
+        api.mensagens.set(`${canalId}:${msgId}`, { canalId: String(canalId), id: msgId, opcoes, webhookId: String(id) });
+        api.envios.set(String(canalId), (api.envios.get(String(canalId)) || 0) + 1);
+        return { id: msgId };
+      },
+      async editMessage(msgId, corpo) {
+        await latencia();
+        valido();
+        consumir(String(canalId));
+        const m = api.mensagens.get(`${canalId}:${msgId}`);
+        if (!m) { const e = new Error('Unknown Message'); e.statusCode = 404; throw e; }
+        m.opcoes = { ...m.opcoes, ...corpo };
+        m.editadaVezes = (m.editadaVezes || 0) + 1;
+      },
+      async deleteMessage(msgId) {
+        await latencia();
+        valido();
+        consumir(String(canalId));
+        if (!api.mensagens.delete(`${canalId}:${msgId}`)) { const e = new Error('Unknown Message'); e.statusCode = 404; throw e; }
+      },
+      async delete() { api.webhooks.delete(String(id)); }
+    };
+  }
+
   const latencia = () => new Promise((r) => setTimeout(r, 2 + Math.random() * 6));
 
   api.cliente = {
@@ -170,9 +205,16 @@ function criarApi({ globalPorSegundo = 50, porCanal = { limite: 30, janelaMs: 60
         api.envios.set(String(canalId), (api.envios.get(String(canalId)) || 0) + 1);
         return { id };
       },
-      // Código antigo: "buscar" o canal e enviar por ele (mesmos limites).
       async fetch(canalId) {
-        return { id: canalId, send: (opcoes) => api.cliente.channels.send(canalId, opcoes), messages: {
+        return {
+          id: canalId,
+          async createWebhook() {
+            if (api.criacaoWebhookFalha) { const e = new Error('Missing Permissions'); e.statusCode = 403; throw e; }
+            const id = `wh${++api.webhooksCriados}`;
+            const token = `tok-${id}`;
+            api.webhooks.set(id, { token, canalId: String(canalId) });
+            return webhookFalso(id, token, canalId);
+          }, send: (opcoes) => api.cliente.channels.send(canalId, opcoes), messages: {
           fetch: async (msgId) => {
             await latencia();
             if (!api.mensagens.has(`${canalId}:${msgId}`)) { const e = new Error('Unknown Message'); e.statusCode = 404; throw e; }
@@ -207,14 +249,12 @@ function criarApi({ globalPorSegundo = 50, porCanal = { limite: 30, janelaMs: 60
     }
   };
 
+  api.webhookFalso = webhookFalso;
   api.copiasVivas = () => [...api.mensagens.values()];
   return api;
 }
 
-// ---------- instalação dos dublês ----------
 let apiAtual = null;
-// O código de produção guarda a referência do client no require; este proxy deixa trocar a API
-// falsa a cada cenário sem recarregar módulos.
 const clienteEstavel = {
   user: { id: 'bot-id', username: 'Global' },
   guilds: { get: (id) => ({ id, name: `Servidor ${id}` }) },
@@ -240,7 +280,6 @@ Module._load = function (request, parent, ...resto) {
 
 function instalarApi(api) { apiAtual = api; }
 
-// ---------- fábricas de cenário ----------
 function guild(idx) { return { guildId: `g${idx}`, canalId: `c${idx}` }; }
 
 function popularDestinos(n) {
@@ -255,7 +294,7 @@ function popularDestinos(n) {
 }
 
 let seqMsg = 1000;
-function mensagemDe({ guildIdx, autor, conteudo, respondendo = null }) {
+function mensagemDe({ guildIdx, autor, conteudo, respondendo = null, anexos = { size: 0 }, figurinhas = [] }) {
   const id = String(seqMsg++);
   const g = guild(guildIdx);
   return {
@@ -270,8 +309,8 @@ function mensagemDe({ guildIdx, autor, conteudo, respondendo = null }) {
       displayName: `User ${id}`, displayAvatarURL: () => null
     },
     messageReference: respondendo ? { messageId: respondendo } : null,
-    attachments: { size: 0 },
-    stickers: [],
+    attachments: anexos,
+    stickers: figurinhas,
     react: async () => {},
     delete: async () => {}
   };

@@ -3,21 +3,20 @@ const MensagemGlobal = require('../../models/MensagemGlobal');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild } = require('../filtros/moderacao');
 const { log, errMsg } = require('../../util/logger');
 const { ehStaffOuDono } = require('../permissoes');
-const { infoMensagem, montarEmbedGlobal } = require('./mensagem');
-const { editarMensagem, apagarMensagem, erroPermanente } = require('../entrega/transporte');
+const { carregarCredenciais } = require('../webhooks');
+const { infoMensagem, montarEmbedGlobal, montarCorpoEdicaoWebhook } = require('./mensagem');
+const { editarMensagem, editarMensagemWebhook, apagarCopia, erroPermanente } = require('../entrega/transporte');
 
 async function ehMensagemOriginal(id) {
   const r = await MensagemGlobal.findOne({ msgId: String(id) }).lean();
   return !!r && r.grupoId === String(id);
 }
 
-// Apaga as cópias direto por canalId/msgId (já estão no banco, não precisa buscar nada na API).
-// Só remove o vínculo de quem foi apagado (ou já não existia) ou falhou de forma permanente;
-// se algo falhou por motivo transitório, o vínculo continua no banco para não deixar órfã.
 async function apagarCopiasDoGrupo(grupoId) {
   const gId = String(grupoId);
   const copias = await MensagemGlobal.find({ grupoId: gId, msgId: { $ne: gId } }).lean();
-  const resultados = await Promise.allSettled(copias.map((c) => apagarMensagem(c.canalId, c.msgId)));
+  const credenciais = await carregarCredenciais(copias.filter((c) => c.webhookId).map((c) => c.guildId));
+  const resultados = await Promise.allSettled(copias.map((c) => apagarCopia(c, credenciais)));
 
   const resolvidas = [];
   let apagadas = 0;
@@ -69,20 +68,28 @@ async function sincronizarEdicao(antiga, nova) {
 
   const embed = montarEmbedGlobal(completa, info);
   const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
+  const credenciais = await carregarCredenciais(copias.filter((c) => c.webhookId).map((c) => c.guildId));
 
-  const corpoEdicao = { embeds: [embed.toJSON()] };
+  const corpoEmbed = { embeds: [embed.toJSON()] };
+  const corpoWebhook = montarCorpoEdicaoWebhook(completa, info);
+
   const resultados = await Promise.allSettled(copias.map(async (c) => {
     if (motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
-      await apagarMensagem(c.canalId, c.msgId);
+      await apagarCopia(c, credenciais);
       return 'removida';
     }
-    await editarMensagem(c.canalId, c.msgId, corpoEdicao);
+    if (c.webhookId) return editarMensagemWebhook(c, credenciais, corpoWebhook);
+    await editarMensagem(c.canalId, c.msgId, corpoEmbed);
     return 'editada';
   }));
 
-  const editadas = resultados.filter((x) => x.status === 'fulfilled' && x.value === 'editada').length;
-  const removidas = resultados.filter((x) => x.status === 'fulfilled' && x.value === 'removida').length;
-  log.info('SYNC', `Edição da msg ${id}: ${editadas} editada(s), ${removidas} removida(s) por filtro, de ${copias.length} cópia(s).`);
+  const contar = (valor) => resultados.filter((x) => x.status === 'fulfilled' && x.value === valor).length;
+  const semWebhook = contar('sem-webhook');
+  log.info(
+    'SYNC',
+    `Edição da msg ${id}: ${contar('editada')} editada(s), ${contar('removida')} removida(s) por filtro, de ${copias.length} cópia(s).` +
+    (semWebhook > 0 ? ` ${semWebhook} não editada(s) por falta do webhook.` : '')
+  );
 }
 
 module.exports = { sincronizarEdicao, apagarCopiasDoGrupo, ehMensagemOriginal };

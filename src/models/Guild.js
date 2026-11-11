@@ -9,14 +9,18 @@ const guildSchema = new Schema(
     filtrarPalavroes: { type: Boolean, default: false },
     filtrarLinks: { type: Boolean, default: false },
     cor: { type: Number, default: null },
-    mostrarIcone: { type: Boolean, default: false }
+    mostrarIcone: { type: Boolean, default: false },
+    webhookId: { type: String, default: null },
+    webhookToken: { type: String, default: null, select: false },
+    webhookCanalId: { type: String, default: null },
+    modoEnvio: { type: String, enum: ['webhook', 'embed', null], default: null },
+    configPainelMessageId: { type: String, default: null },
+    configPainelUserId: { type: String, default: null }
   },
   { timestamps: true }
 );
 
-// Qualquer escrita aqui pode mudar a lista de destinos ativos, então o cache é invalidado.
 const OPERACOES_QUERY = ['updateOne', 'updateMany', 'findOneAndUpdate', 'findOneAndReplace', 'findOneAndDelete', 'deleteOne', 'deleteMany', 'replaceOne'];
-// Cast: os tipos do Mongoose esperam uma união de literais aqui, não string[].
 const schemaComHooks = /** @type {any} */ (guildSchema);
 schemaComHooks.post(OPERACOES_QUERY, () => invalidarDestinos());
 schemaComHooks.post('save', () => invalidarDestinos());

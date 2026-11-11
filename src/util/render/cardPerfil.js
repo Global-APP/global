@@ -30,7 +30,8 @@ const BADGES = {
   developer: { label: ROTULO_BADGE.developer, cor: '#4facfe' },
   partner: { label: ROTULO_BADGE.partner, cor: '#f9a11b' },
   staff: { label: ROTULO_BADGE.staff, cor: '#a855f7' },
-  verified: { label: ROTULO_BADGE.verified, cor: '#3b9bf5' }
+  verified: { label: ROTULO_BADGE.verified, cor: '#3b9bf5' },
+  contributor: { label: ROTULO_BADGE.contributor, cor: '#f86b70' }
 };
 
 const cacheBadges = new Map();

@@ -15,17 +15,19 @@ const COR_BADGE = {
   developer: 0x4facfe,
   partner: 0xf9a11b,
   verified: 0x3b9bf5,
+  contributor: 0xf86b70,
   active: 0x4ade5f
 };
 
-const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'verified', 'active'];
+const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'contributor', 'verified', 'active'];
 
 const ROTULO_BADGE = {
   active: 'Conversador',
   developer: 'Desenvolvedor',
   partner: 'Parceiro',
   staff: 'Staff',
-  verified: 'Verificado'
+  verified: 'Verificado',
+  contributor: 'Contribuidor'
 };
 
 const CONVERSADOR_MENSAGENS = 100;
@@ -33,6 +35,18 @@ const CONVERSADOR_MENSAGENS = 100;
 const CONVERSADOR_JANELA_MS = 3 * 24 * 60 * 60 * 1000;
 
 const COOLDOWN_TEMPO = 2000;
+
+const MODO_ENVIO = String(process.env.MODO_ENVIO || 'embed').trim().toLowerCase() === 'webhook' ? 'webhook' : 'embed';
+
+const NOME_WEBHOOK_MAX = 80;
+
+const ANEXO_LIMITE_BYTES = (Number(process.env.ANEXO_LIMITE_MB) || 8) * 1024 * 1024;
+
+const ANEXO_TOTAL_BYTES = ANEXO_LIMITE_BYTES * 2;
+
+const ANEXO_MAX_ARQUIVOS = 4;
+
+const ANEXO_TIMEOUT_MS = 20_000;
 
 const COOLDOWN_PERFIL = 5_000;
 
@@ -92,6 +106,12 @@ module.exports = {
   CONVERSADOR_MENSAGENS,
   CONVERSADOR_JANELA_MS,
   COOLDOWN_TEMPO,
+  MODO_ENVIO,
+  NOME_WEBHOOK_MAX,
+  ANEXO_LIMITE_BYTES,
+  ANEXO_TOTAL_BYTES,
+  ANEXO_MAX_ARQUIVOS,
+  ANEXO_TIMEOUT_MS,
   COOLDOWN_PERFIL,
   SUPORTE_GUILD_ID,
   SUPORTE_CANAL_BOAS_VINDAS,

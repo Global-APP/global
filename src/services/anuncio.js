@@ -72,7 +72,6 @@ async function enviarAnuncioParaTodos(anuncio) {
   const embed = montarEmbedAnuncio(anuncio);
   const destinos = await listarDestinosAtivos();
 
-  // Passa pela fila de entrega, então um anúncio para N servidores não vira rajada de N requests.
   const resultados = await Promise.allSettled(
     destinos.map(({ canalId }) => enviarMensagem(canalId, { embeds: [embed] }))
   );

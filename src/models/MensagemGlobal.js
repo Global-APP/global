@@ -6,6 +6,7 @@ const mensagemGlobalSchema = new Schema({
   canalId: { type: String, required: true },
   msgId: { type: String, required: true, unique: true },
   autorId: { type: String, required: true },
+  webhookId: { type: String, default: null },
   criadoEm: { type: Number, required: true, default: () => Date.now() }
 });
 

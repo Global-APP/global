@@ -10,8 +10,17 @@ const { tratarComando } = require('../handlers/commandHandler');
 const { idDoServidor } = require('../util/ids');
 const { log, descreverContexto } = require('../util/logger');
 const { iniciarStatusRotativo } = require('../services/status');
+const { tratarReacaoPainel } = require('../services/configPainel');
 
 function registrarEventos() {
+  client.on(Events.MessageReactionAdd, (payload) => tratarReacaoPainel(payload));
+
+  client.on(Events.MessageReactionAddMany, async (payload) => {
+    for (const reacao of payload.reactions || []) {
+      await tratarReacaoPainel({ ...payload, userId: reacao.userId, member: reacao.member, emoji: reacao.emoji });
+    }
+  });
+
   client.on(Events.Ready, async () => {
     const [canais, staffs] = await Promise.all([
       Guild.countDocuments({ canalId: { $ne: null } }),
@@ -38,7 +47,6 @@ function registrarEventos() {
   });
 
   client.on(Events.MessageCreate, async (message) => {
-    // webhookId: nunca reprocessa mensagens de webhook (evita loop de retransmissão).
     if (message.author.bot || message.webhookId || message.author.id === client.user.id) return;
 
     try {
@@ -77,7 +85,6 @@ function registrarEventos() {
     try {
       if (!msg || !msg.id) return;
       const id = String(msg.id);
-      // Se a original foi apagada no meio da retransmissão, aborta os envios que ainda não saíram.
       if (cancelarRetransmissao(id)) {
         log.info('SYNC', `Mensagem ${id} apagada durante a retransmissão; envios pendentes cancelados.`);
         return;
