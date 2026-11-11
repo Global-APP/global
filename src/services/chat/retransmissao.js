@@ -96,8 +96,13 @@ async function retransmitirMensagemGlobal(message) {
     embed = null;
   }
 
-  const modoWebhook = MODO_ENVIO === 'webhook';
-  const payloadWebhook = modoWebhook ? montarPayloadWebhook(message, info, await prepararAnexos(message)) : null;
+  let payloadWebhookPronto = null;
+  const payloadWebhook = () => {
+    if (!payloadWebhookPronto) {
+      payloadWebhookPronto = prepararAnexos(message).then((anexos) => montarPayloadWebhook(message, info, anexos));
+    }
+    return payloadWebhookPronto;
+  };
 
   const refId = message.messageReference ? message.messageReference.messageId : null;
   let grupoRespondido = null;
@@ -146,8 +151,9 @@ async function retransmitirMensagemGlobal(message) {
       return enfileirar(destino.canalId, async () => {
         if (estado.cancelado) return null;
 
-        if (modoWebhook) {
-          const enviadaWebhook = await enviarPorWebhook(destino, payloadWebhookDoDestino(payloadWebhook, mencao, origemReply), alvoReply);
+        if ((destino.modoEnvio || MODO_ENVIO) === 'webhook') {
+          const base = await payloadWebhook();
+          const enviadaWebhook = await enviarPorWebhook(destino, payloadWebhookDoDestino(base, mencao, origemReply), alvoReply);
           if (enviadaWebhook) {
             if (!enviadaWebhook.mensagem || !enviadaWebhook.mensagem.id) throw new Error('Webhook não retornou a mensagem criada');
             return {

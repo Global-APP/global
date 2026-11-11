@@ -17,7 +17,8 @@ module.exports = {
     const comandos = [
       publico('g.ping/status', 'Mostra a latência do Global.'),
       publico('g.help/ajuda', 'Mostra todos os comandos do Global.'),
-      publico('g.config', 'No canal que é executado, seta a conexão Global.'),
+      publico('g.conectar', 'No canal que é executado, seta a conexão Global.'),
+      publico('g.config', 'Abre o painel: modo webhook ou embed e ícone do servidor.'),
       publico('g.desconectar', 'Desconecta este servidor do chat global.'),
       publico('g.pausar/retomar', 'Pausa ou retoma o chat global neste servidor.'),
       publico('g.automod', 'Escolhe se este servidor filtra palavrões e links (padrão: liberados).'),

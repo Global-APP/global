@@ -26,7 +26,7 @@ module.exports = {
     limparFalhasDestino(gId);
     if (r.matchedCount > 0) {
       log.ok('DESCONECTAR', `Servidor desconectado | ${descreverContexto(message)}`);
-      await message.reply('<:checkboxcirclefill:1562606683371339777> Este servidor foi desconectado do chat global.\n-# Use g.config no canal desejado para reconectar.');
+      await message.reply('<:checkboxcirclefill:1562606683371339777> Este servidor foi desconectado do chat global.\n-# Use g.conectar no canal desejado para reconectar.');
     } else {
       await message.reply('<:information2fill:1562606683371339784> Este servidor não está conectado ao chat global.');
     }

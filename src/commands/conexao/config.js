@@ -1,9 +1,9 @@
-const { DONO_ID } = require('../../config');
+const { PREFIXO } = require('../../config');
 const Guild = require('../../models/Guild');
-const { limparFalhasDestino } = require('../../services/destinos');
 const { idDoServidor } = require('../../util/ids');
-const { log, descreverContexto } = require('../../util/logger');
-const { membroPodeGerenciarCanais } = require('../../services/permissoes');
+const { log, errMsg, descreverContexto } = require('../../util/logger');
+const { temPermissaoConfig } = require('../../services/permissoes');
+const { embedPainel, reacoesDoPainel } = require('../../services/configPainel');
 
 const VALORES_LIGAR = ['on', 'ligar', 'ativar', 'sim', 'true'];
 const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'];
@@ -11,49 +11,56 @@ const VALORES_DESLIGAR = ['off', 'desligar', 'desativar', 'nao', 'não', 'false'
 module.exports = {
   name: 'config',
   aliases: ['configurar', 'configurações'],
-  description: 'Define o canal atual como a conexão global. Subcomandos: servericon.',
+  description: 'Abre o painel de configurações da conexão global.',
 
   async execute(message, args = []) {
     const guildId = idDoServidor(message);
     if (!guildId) return;
 
-    if (message.author.id !== DONO_ID) {
-      const temPermissao = await membroPodeGerenciarCanais(message);
-      if (!temPermissao) {
-        log.warn('CONFIG', `Permissão negada para ${descreverContexto(message)}`);
-        await message.reply('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
-        return;
-      }
+    if (!(await temPermissaoConfig(message))) {
+      log.warn('CONFIG', `Permissão negada para ${descreverContexto(message)}`);
+      await message.reply('<:closecirclefill:1562606683371339786> Você precisa da permissão **Gerenciar Canais** (ou ser o desenvolvedor do Global) para usar este comando.');
+      return;
     }
 
     const gId = String(guildId);
     const sub = (args[0] || '').toLowerCase();
 
-    if (sub === 'servericon') {
-      return this.subServerIcon(message, gId, args[1]);
-    }
+    if (sub === 'servericon') return this.subServerIcon(message, gId, args[1]);
 
     if (sub) {
       await message.reply(
         '<:closecirclefill:1562606683371339786> Subcomando inválido.\n' +
-        '-# Use `g.config` para definir o canal ou `g.config servericon [on|off]` para o ícone do servidor.'
+        `-# Use \`${PREFIXO}config\` para abrir o painel ou \`${PREFIXO}config servericon [on|off]\` para o ícone do servidor.`
       );
       return;
     }
 
-    return this.definirCanal(message, gId);
+    return this.abrirPainel(message, gId);
   },
 
-  async definirCanal(message, gId) {
-    const anterior = await Guild.findOne({ guildId: gId, canalId: { $ne: null } }).lean();
-    await Guild.findOneAndUpdate({ guildId: gId }, { canalId: String(message.channel.id) }, { upsert: true });
-    limparFalhasDestino(gId);
-    log.ok('CONFIG', `Canal global ${anterior ? `alterado (${anterior.canalId} -> ${message.channel.id})` : `definido (${message.channel.id})`} | ${descreverContexto(message)}`);
+  async abrirPainel(message, gId) {
+    let painel = null;
+    try {
+      const atual = await Guild.findOne({ guildId: gId }).lean();
+      painel = await message.channel.send({
+        embeds: [embedPainel(atual || {})],
+        allowedMentions: { parse: [] }
+      });
 
-    await message.reply(
-      `<:checkboxcirclefill:1562606683371339777> O canal <#${message.channel.id}> foi definido com sucesso como a \`Conexão Global\`.\n` +
-      '-# Execute g.config no canal que **você quer definir** a conexão global.'
-    );
+      await Guild.findOneAndUpdate(
+        { guildId: gId },
+        { $set: { configPainelMessageId: String(painel.id), configPainelUserId: String(message.author.id) } },
+        { upsert: true }
+      );
+
+      for (const emoji of reacoesDoPainel()) await painel.react(emoji);
+      log.ok('CONFIG', `Painel publicado | ${descreverContexto(message)}`);
+    } catch (e) {
+      if (painel && typeof painel.delete === 'function') await painel.delete().catch(() => {});
+      log.error('CONFIG', `Falha ao publicar o painel | ${descreverContexto(message)}: ${errMsg(e)}`, e);
+      await message.reply('<:closecirclefill:1562606683371339786> Não consegui abrir o painel. Confira se tenho as permissões de **Enviar mensagens**, **Adicionar reações** e **Gerenciar mensagens** neste canal.');
+    }
   },
 
   async subServerIcon(message, gId, opcao) {
@@ -62,16 +69,13 @@ module.exports = {
 
     let novo;
     const o = (opcao || '').toLowerCase();
-    if (VALORES_LIGAR.includes(o)) {
-      novo = true;
-    } else if (VALORES_DESLIGAR.includes(o)) {
-      novo = false;
-    } else if (!o) {
-      novo = !estavaLigado;
-    } else {
+    if (VALORES_LIGAR.includes(o)) novo = true;
+    else if (VALORES_DESLIGAR.includes(o)) novo = false;
+    else if (!o) novo = !estavaLigado;
+    else {
       await message.reply(
         '<:closecirclefill:1562606683371339786> Opção inválida.\n' +
-        '-# Use `g.config servericon on`, `g.config servericon off` ou só `g.config servericon` para alternar.'
+        `-# Use \`${PREFIXO}config servericon on\`, \`${PREFIXO}config servericon off\` ou só \`${PREFIXO}config servericon\` para alternar.`
       );
       return;
     }

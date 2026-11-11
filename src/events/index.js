@@ -10,8 +10,17 @@ const { tratarComando } = require('../handlers/commandHandler');
 const { idDoServidor } = require('../util/ids');
 const { log, descreverContexto } = require('../util/logger');
 const { iniciarStatusRotativo } = require('../services/status');
+const { tratarReacaoPainel } = require('../services/configPainel');
 
 function registrarEventos() {
+  client.on(Events.MessageReactionAdd, (payload) => tratarReacaoPainel(payload));
+
+  client.on(Events.MessageReactionAddMany, async (payload) => {
+    for (const reacao of payload.reactions || []) {
+      await tratarReacaoPainel({ ...payload, userId: reacao.userId, member: reacao.member, emoji: reacao.emoji });
+    }
+  });
+
   client.on(Events.Ready, async () => {
     const [canais, staffs] = await Promise.all([
       Guild.countDocuments({ canalId: { $ne: null } }),

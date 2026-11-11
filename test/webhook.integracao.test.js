@@ -174,3 +174,16 @@ test('sem permissão para criar webhook, o servidor recebe o embed normal', asyn
   assert.equal(copias.length, 2);
   assert.ok(copias.every((m) => !m.webhookId && m.opcoes.embeds));
 });
+
+test('cada servidor escolhe o próprio modo: g5 em embed, g6 em webhook', async () => {
+  const api = await novoCenario(6);
+  await Guild.updateOne({ guildId: 'g5' }, { modoEnvio: 'embed' });
+  await retransmitirMensagemGlobal(H.mensagemDe({ guildIdx: 1, conteudo: 'modo por servidor' }));
+
+  const noG5 = api.copiasVivas().filter((m) => m.canalId === 'c5');
+  const noG6 = api.copiasVivas().filter((m) => m.canalId === 'c6');
+  assert.equal(noG5.length, 1);
+  assert.ok(noG5[0].opcoes.embeds && !noG5[0].webhookId);
+  assert.equal(noG6.length, 1);
+  assert.ok(noG6[0].webhookId);
+});
