@@ -7,7 +7,7 @@ O Global é um bot do [Fluxer](https://fluxer.app) criado para o público brasil
 ## Quem opera o bot
 
 - Operador: xMqR, responsável pelo projeto Global-APP.
-- Contato para qualquer assunto desta política: [PREENCHER: e-mail de contato]
+- Contato para qualquer assunto desta política: contato.xmqr@gmail.com
 - Código aberto: https://github.com/Global-APP/global
 
 ## O que o bot coleta e por quanto tempo
@@ -30,7 +30,7 @@ Quando o servidor de destino usa o modo webhook, o bot baixa os anexos temporari
 
 ## Verificação de conteúdo impróprio (NSFW)
 
-Toda imagem, vídeo e figurinha enviada no chat global é verificada antes de ser retransmitida. Para isso, o bot envia o **endereço (URL) da mídia** para um serviço externo de verificação, operado por [PREENCHER: nome de quem opera o serviço, ex.: Mubi], em `nsfw.mubilop.com`. O serviço acessa a mídia, analisa e devolve uma pontuação. Nenhum texto de mensagem, nome ou ID de usuário é enviado a esse serviço. [PREENCHER: confirme com o operador do serviço se ele guarda a mídia ou o resultado e por quanto tempo.]
+Toda imagem, vídeo e figurinha enviada no chat global é verificada antes de ser retransmitida. Para isso, o bot envia o **endereço (URL) da mídia** para um serviço externo de verificação, operado por Mubi, em `nsfw.mubilop.com`. O serviço acessa a mídia, analisa e devolve uma pontuação. Nenhum texto de mensagem, nome ou ID de usuário é enviado a esse serviço. O serviço não salva mídias.
 
 Mídias consideradas impróprias são bloqueadas e não são retransmitidas.
 
