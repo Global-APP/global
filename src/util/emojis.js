@@ -9,7 +9,9 @@ const badges = {
     partner: "<:parceiro:1563670318453628930>",
     staff: "<:staff:1563670318453628931>",
     verified: "<:verificado:1563670318453628932>",
-    contributor: "<:contribuidor:1564813701633015808>"
+    contributor: "<:contribuidor:1564813701633015808>",
+    otobank:
+"<:otobank:1570242889479364608>"
 }
 
 module.exports = { emojis, badges };
