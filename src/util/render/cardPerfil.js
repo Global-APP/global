@@ -26,6 +26,7 @@ const FONTE_MEDIA = 'GlobalMedium, sans-serif';
 const FONTE_NEGRITO = 'GlobalBold, sans-serif';
 
 const BADGES = {
+  otobank: { label: ROTULO_BADGE.otobank, cor: '#84f25c' },
   active: { label: ROTULO_BADGE.active, cor: '#4ade5f' },
   developer: { label: ROTULO_BADGE.developer, cor: '#4facfe' },
   partner: { label: ROTULO_BADGE.partner, cor: '#f9a11b' },
