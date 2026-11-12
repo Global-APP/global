@@ -18,7 +18,8 @@ const APELIDOS = {
   verificado: 'verified',
   verified: 'verified',
   contribuidor: 'contributor',
-  contributor: 'contributor'
+  contributor: 'contributor',
+  otobank: 'otobank'
 };
 
 function resolverBadge(texto) {
