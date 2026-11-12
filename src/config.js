@@ -16,10 +16,11 @@ const COR_BADGE = {
   partner: 0xf9a11b,
   verified: 0x3b9bf5,
   contributor: 0xf86b70,
+  otobank: 0x84f25c,
   active: 0x4ade5f
 };
 
-const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'contributor', 'verified', 'active'];
+const PRIORIDADE_BADGES = ['staff', 'developer', 'partner', 'contributor', 'verified', 'active', 'otobank'];
 
 const ROTULO_BADGE = {
   active: 'Conversador',
@@ -27,7 +28,8 @@ const ROTULO_BADGE = {
   partner: 'Parceiro',
   staff: 'Staff',
   verified: 'Verificado',
-  contributor: 'Contribuidor'
+  contributor: 'Contribuidor',
+  otobank: 'Otobank'
 };
 
 const CONVERSADOR_MENSAGENS = 100;
