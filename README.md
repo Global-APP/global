@@ -37,8 +37,8 @@ cp .env.example .env
 | `MONGODB_URI`  | Não         | `mongodb://127.0.0.1:27017/global` |
 | `NSFW_URL`     | Não         | `http://localhost:3000`            |
 | `NSFW_API_KEY` | Não         | vazio                              |
-| `ENTREGA_CONCORRENCIA` | Não | `10` |
-| `ENTREGA_REQS_POR_SEGUNDO` | Não | `35` |
+| `ENTREGA_CONCORRENCIA` | Não | `6` |
+| `ENTREGA_REQS_POR_SEGUNDO` | Não | `15` |
 
 > [!IMPORTANT]
 > Sem o serviço NSFW no ar, mídia é bloqueada por padrão. Ajuste `NSFW_URL` ou mantenha o serviço rodando.
