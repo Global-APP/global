@@ -1,3 +1,5 @@
+process.env.ENTREGA_REQS_POR_SEGUNDO = '35';
+process.env.ENTREGA_CONCORRENCIA = '10';
 process.env.MODO_ENVIO = 'webhook';
 
 const test = require('node:test');
@@ -157,7 +159,7 @@ test('webhook apagado no servidor é recriado e a mensagem ainda chega', async (
 });
 
 test('429 durante envio por webhook é reenviado sem perder nem duplicar', async () => {
-  const api = await novoCenario(60, { globalPorSegundo: 20 });
+  const api = await novoCenario(60, { globalPorSegundo: 8 });
   await retransmitirMensagemGlobal(H.mensagemDe({ guildIdx: 1, conteudo: 'sob pressão' }));
   assert.ok(api.rate429 > 0);
   assert.equal(copiasDe(api).length, 59);
