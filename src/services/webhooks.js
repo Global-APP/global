@@ -5,7 +5,7 @@ const { log, errMsg } = require('../util/logger');
 const { ehRateLimit } = require('../util/ratelimit');
 
 const NOME_WEBHOOK = 'Global';
-const ESPERA_NOVA_TENTATIVA_MS = 10 * 60 * 1000;
+const ESPERA_NOVA_TENTATIVA_MS = 60 * 60 * 1000;
 
 const criacoesEmAndamento = new Map();
 const bloqueadosAte = new Map();
