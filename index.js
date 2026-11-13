@@ -9,6 +9,24 @@ const { iniciarAnuncio } = require('./src/services/anuncio');
 const { registrarSugestoes } = require('./src/services/sugestoes');
 const { log } = require('./src/util/logger');
 
+let pararDiscord = null;
+
+async function iniciarDiscord() {
+  const token = process.env.DISCORD_TOKEN;
+  if (!token) {
+    log.info('DISCORD', 'DISCORD_TOKEN não definido, a ponte com o Discord está desativada.');
+    return;
+  }
+
+  try {
+    const discord = require('./src/plataformas/discord');
+    pararDiscord = discord.encerrarDiscord;
+    await discord.iniciarDiscord(token);
+  } catch (e) {
+    log.error('DISCORD', 'Falha ao iniciar o bot do Discord, o Fluxer continua funcionando', e);
+  }
+}
+
 async function main(token) {
   await conectarBanco();
   await executarMigracoes();
@@ -21,6 +39,7 @@ async function main(token) {
   registrarSugestoes();
 
   await client.login(token);
+  await iniciarDiscord();
 }
 
 process.on('unhandledRejection', (e) => log.error('PROCESSO', 'Promise rejeitada sem tratamento', e));
@@ -28,6 +47,7 @@ process.on('uncaughtException', (e) => log.error('PROCESSO', 'Exceção não cap
 
 async function encerrar(sinal) {
   log.info('BOT', `Recebido ${sinal}, encerrando...`);
+  if (pararDiscord) await pararDiscord();
   try {
     await desconectarBanco();
   } catch (_) {

@@ -3,24 +3,17 @@ const { client } = require('../lib/client');
 const { SUPORTE_GUILD_ID, SUPORTE_CANAL_BOAS_VINDAS } = require('../config');
 const Guild = require('../models/Guild');
 const User = require('../models/User');
-const { limparFalhasDestino } = require('../services/destinos');
-const { ehMensagemOriginal, sincronizarEdicao, apagarCopiasDoGrupo } = require('../services/chat/sincronizacao');
-const { retransmitirMensagemGlobal, cancelarRetransmissao } = require('../services/chat/retransmissao');
+const { removerConexaoDeGuild } = require('../services/destinos');
+const { sincronizarEdicao } = require('../services/chat/sincronizacao');
+const { retransmitirMensagemGlobal } = require('../services/chat/retransmissao');
+const { aoApagarOriginal } = require('../services/chat/exclusao');
+const { pontePorCanal } = require('../services/pontes');
 const { tratarComando } = require('../handlers/commandHandler');
 const { idDoServidor } = require('../util/ids');
 const { log, descreverContexto } = require('../util/logger');
 const { iniciarStatusRotativo } = require('../services/status');
-const { tratarReacaoPainel } = require('../services/configPainel');
 
 function registrarEventos() {
-  client.on(Events.MessageReactionAdd, (payload) => tratarReacaoPainel(payload));
-
-  client.on(Events.MessageReactionAddMany, async (payload) => {
-    for (const reacao of payload.reactions || []) {
-      await tratarReacaoPainel({ ...payload, userId: reacao.userId, member: reacao.member, emoji: reacao.emoji });
-    }
-  });
-
   client.on(Events.Ready, async () => {
     const [canais, staffs] = await Promise.all([
       Guild.countDocuments({ canalId: { $ne: null } }),
@@ -32,15 +25,7 @@ function registrarEventos() {
 
   client.on(Events.GuildDelete, async (guild) => {
     try {
-      const guildId = String(guild.id);
-      const r = await Guild.updateOne(
-        { guildId, canalId: { $ne: null } },
-        { canalId: null, pausado: false, filtrarPalavroes: false, filtrarLinks: false }
-      );
-      if (r.matchedCount > 0) {
-        limparFalhasDestino(guildId);
-        log.warn('LIMPEZA', `Bot saiu/servidor deletado (${guildId}); conexão global removida.`);
-      }
+      await removerConexaoDeGuild(guild.id);
     } catch (e) {
       log.error('LIMPEZA', 'Erro ao tratar GuildDelete', e);
     }
@@ -59,6 +44,12 @@ function registrarEventos() {
       }
 
       if (await tratarComando(message, conteudo)) return;
+
+      const ponte = await pontePorCanal(message.channel.id);
+      if (ponte) {
+        await retransmitirMensagemGlobal(message, ponte);
+        return;
+      }
 
       const guildId = idDoServidor(message);
       if (guildId) {
@@ -84,14 +75,7 @@ function registrarEventos() {
   client.on(Events.MessageDelete, async (msg) => {
     try {
       if (!msg || !msg.id) return;
-      const id = String(msg.id);
-      if (cancelarRetransmissao(id)) {
-        log.info('SYNC', `Mensagem ${id} apagada durante a retransmissão; envios pendentes cancelados.`);
-        return;
-      }
-      if (!(await ehMensagemOriginal(id))) return;
-      const n = await apagarCopiasDoGrupo(id);
-      log.info('SYNC', `Mensagem ${id} apagada na origem; ${n} cópia(s) removida(s).`);
+      await aoApagarOriginal(msg.id);
     } catch (e) {
       log.error('SYNC', 'Erro ao sincronizar exclusão', e);
     }

@@ -38,7 +38,6 @@ const CONVERSADOR_JANELA_MS = 3 * 24 * 60 * 60 * 1000;
 
 const COOLDOWN_TEMPO = 2000;
 
-const MODO_ENVIO = String(process.env.MODO_ENVIO || 'embed').trim().toLowerCase() === 'webhook' ? 'webhook' : 'embed';
 
 const NOME_WEBHOOK_MAX = 80;
 
@@ -109,7 +108,6 @@ module.exports = {
   CONVERSADOR_MENSAGENS,
   CONVERSADOR_JANELA_MS,
   COOLDOWN_TEMPO,
-  MODO_ENVIO,
   NOME_WEBHOOK_MAX,
   ANEXO_LIMITE_BYTES,
   ANEXO_TOTAL_BYTES,

@@ -76,13 +76,14 @@ function logComando(message, nome) {
   log.info('CMD', `${PREFIXO}${nome} | ${descreverContexto(message)} | canal ${message.channel ? message.channel.id : '?'}`);
 }
 
-async function tratarComando(message, conteudo) {
+async function tratarComando(message, conteudo, categoriasPermitidas = null) {
   if (!conteudo.startsWith(PREFIXO)) return false;
 
   const partes = conteudo.slice(PREFIXO.length).trim().split(/\s+/);
   const nome = partes[0] ? partes[0].toLowerCase() : '';
   const cmd = rotas.get(nome);
   if (!cmd) return false;
+  if (categoriasPermitidas && !categoriasPermitidas.includes(cmd.categoria)) return false;
 
   logComando(message, nome);
   try {
