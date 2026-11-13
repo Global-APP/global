@@ -1,8 +1,10 @@
 <div align="center">
 
-<a href="https://globalbot.site"><img src=".github/assets/readme/banner.png" alt="Global" width="760"></a>
+<a href="https://globalbot.site"><img src=".github/assets/global-icon.png" alt="Global" width="120" height="120"></a>
 
-<br>
+# Global
+
+Um chat só para o Fluxer e o Discord.
 
 [![Site](https://img.shields.io/badge/site-globalbot.site-0330ef?style=flat-square&labelColor=0B0B0B)](https://globalbot.site)
 [![Fluxer](https://img.shields.io/badge/Fluxer-adicionar-0330ef?style=flat-square&labelColor=0B0B0B)](https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=4503600164629568)
@@ -10,19 +12,24 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-0330ef?style=flat-square&labelColor=0B0B0B&logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-PolyForm%20Noncommercial-0330ef?style=flat-square&labelColor=0B0B0B)](LICENSE)
 
+<br>
+
+<img src=".github/assets/readme/chat.png" alt="Mensagens do Fluxer e do Discord chegando no Global" width="640">
+
 </div>
 
-> [!NOTE]
-> Este repositório é o **bot**. O código do site fica em [globaloficial/global_site](https://github.com/globaloficial/global_site).
+<br>
+
+> Este repositório é o bot. O site fica em [globaloficial/global_site](https://github.com/globaloficial/global_site).
 
 <br>
 
 <h2 align="center">Sobre</h2>
 
 <p align="center">
-O Global liga comunidades do <a href="https://fluxer.app">Fluxer</a> e do Discord em um único chat.<br>
-Cada servidor escolhe um canal, e as mensagens dele aparecem nos canais de todos os outros,<br>
-com edições, exclusões e replies sincronizados.
+O Global junta comunidades do <a href="https://fluxer.app">Fluxer</a> e do Discord num mesmo chat.<br>
+Cada servidor escolhe um canal, e o que é escrito ali aparece nos canais dos outros.<br>
+Editar, apagar e responder também funciona entre os servidores.
 </p>
 
 <br>
@@ -30,7 +37,7 @@ com edições, exclusões e replies sincronizados.
 <h2 align="center">Como funciona</h2>
 
 <div align="center">
-<img src=".github/assets/readme/fluxo.png" alt="Fluxo de uma mensagem pelo Global" width="720">
+<img src=".github/assets/readme/fluxo.png" alt="O caminho de uma mensagem pelo Global" width="760">
 </div>
 
 <br>
@@ -55,8 +62,8 @@ com edições, exclusões e replies sincronizados.
 <h2 align="center">Fluxer e Discord</h2>
 
 <p align="center">
-Os dois bots rodam no mesmo processo e falam com o núcleo por adaptadores.<br>
-Cada plataforma tem a sua própria fila de envio, então o limite de uma não trava a outra.
+Os dois bots rodam no mesmo processo.<br>
+Cada plataforma tem a sua fila de envio, então o limite de uma não segura a outra.
 </p>
 
 <br>
@@ -133,8 +140,7 @@ cp .env.example .env
 
 </div>
 
-> [!IMPORTANT]
-> Sem o serviço NSFW no ar, mídia é bloqueada por padrão. Ajuste `NSFW_URL` ou mantenha o serviço rodando.
+> Se o serviço NSFW estiver fora do ar, as mídias são bloqueadas. Ajuste o `NSFW_URL` ou deixe o serviço rodando.
 
 Para o Discord, ative a **Message Content Intent** no [Developer Portal](https://discord.com/developers/applications). O bot também precisa de **Gerenciar Webhooks** e **Gerenciar Mensagens** nos canais conectados.
 
