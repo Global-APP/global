@@ -1,14 +1,15 @@
 const { log } = require('../../util/logger');
 const { ehRateLimit, definirContadorRelays } = require('../../util/ratelimit');
 
-const CONCORRENCIA_GLOBAL = Number(process.env.ENTREGA_CONCORRENCIA) || 10;
-const TAXA_MAXIMA = Number(process.env.ENTREGA_REQS_POR_SEGUNDO) || 35;
+const CONCORRENCIA_GLOBAL = Number(process.env.ENTREGA_CONCORRENCIA) || 6;
+const TAXA_MAXIMA = Number(process.env.ENTREGA_REQS_POR_SEGUNDO) || 15;
 const TAXA_MINIMA = Math.min(5, TAXA_MAXIMA);
 const MAX_TENTATIVAS_429 = 8;
 const MAX_TENTATIVAS_ERRO = 3;
 const ESPERA_MIN_MS = 50;
 const ESPERA_MAX_MS = 60_000;
 const BLOQUEIO_MAX_MS = 3_600_000;
+const JANELA_ESCALADA_MS = 60_000;
 const TEMPO_MAX_JOB_MS = Number(process.env.ENTREGA_TIMEOUT_MS) || 45_000;
 const ESPERA_429_PADRAO_MS = 1000;
 const MAX_ALTAS_SEGUIDAS = 5;
@@ -26,6 +27,8 @@ let pendentes = 0;
 let globalPausadoAte = 0;
 let bloqueadoAte = 0;
 let bloqueio = null;
+let sequencia429 = 0;
+let ultimo429Em = 0;
 let taxaAtual = TAXA_MAXIMA;
 let ultimoCorteTaxa = 0;
 let ultimoAjusteTaxa = 0;
@@ -263,9 +266,14 @@ function tratarRateLimit(destino, job, erro, limite) {
     return;
   }
 
-  const espera = Math.min(ESPERA_MAX_MS, Math.max(ESPERA_MIN_MS, limite.retryAfterMs)) + Math.floor(Math.random() * 100);
-  if (limite.global) globalPausadoAte = Math.max(globalPausadoAte, Date.now() + espera);
-  else destino.pausadoAte = Math.max(destino.pausadoAte, Date.now() + espera);
+  const agora = Date.now();
+  if (agora >= globalPausadoAte) {
+    sequencia429 = agora - ultimo429Em < JANELA_ESCALADA_MS ? sequencia429 + 1 : 1;
+    ultimo429Em = agora;
+  }
+  const base = Math.max(ESPERA_MIN_MS, limite.retryAfterMs);
+  const espera = Math.min(ESPERA_MAX_MS, base * 2 ** Math.min(sequencia429 - 1, 2)) + Math.floor(Math.random() * 100);
+  globalPausadoAte = Math.max(globalPausadoAte, agora + espera);
 
   job.tentativas429++;
   if (job.tentativas429 <= MAX_TENTATIVAS_429) {
