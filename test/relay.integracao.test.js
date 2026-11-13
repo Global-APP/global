@@ -1,3 +1,6 @@
+process.env.ENTREGA_REQS_POR_SEGUNDO = '35';
+process.env.ENTREGA_CONCORRENCIA = '10';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const H = require('./harness/falsos');
@@ -42,7 +45,7 @@ test('rajada: 100 servidores x 2 mensagens, limite global de 50/s, nada se perde
 });
 
 test('429 de verdade (bucket global menor que o nosso orçamento): reenvia sem perder nem duplicar', async (t) => {
-  const api = await novoCenario({ globalPorSegundo: 20 }, 80);
+  const api = await novoCenario({ globalPorSegundo: 8 }, 80);
   await retransmitirMensagemGlobal(H.mensagemDe({ guildIdx: 1, conteudo: 'sob pressão' }));
   t.diagnostic(`envios aceitos=${api.aceitos} 429=${api.rate429}`);
 

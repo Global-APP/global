@@ -58,16 +58,30 @@ test('429 reenfileira o job, espera retry_after e executa exatamente uma vez com
   assert.ok(Date.now() - t0 >= 140, 'deveria ter esperado o retry_after');
 });
 
-test('429 num destino não trava os outros destinos', async () => {
+test('429 em qualquer destino pausa todos os envios do bot pelo tempo informado', async () => {
   let n = 0;
-  const lento = enfileirar('canal-bloqueado', async () => {
+  const primeiro = enfileirar('canal-bloqueado', async () => {
     if (++n === 1) throw erro429(0.3);
     return 'depois';
   });
+  await dormir(30);
   const t0 = Date.now();
-  await enfileirar('canal-livre', async () => 'rapido');
-  assert.ok(Date.now() - t0 < 200, 'destino independente não deveria esperar');
-  assert.equal(await lento, 'depois');
+  await enfileirar('canal-outro', async () => 'outro');
+  assert.ok(Date.now() - t0 >= 200, 'o outro canal deveria esperar a pausa geral');
+  assert.equal(await primeiro, 'depois');
+});
+
+test('429 seguidos não diminuem a pausa e cada job espera a pausa geral antes de tentar de novo', async () => {
+  const inicios = [];
+  let n = 0;
+  await enfileirar('canal-escala', async () => {
+    inicios.push(Date.now());
+    if (++n <= 3) throw erro429(0.05);
+    return 'ok';
+  });
+  const intervalos = inicios.slice(1).map((t, i) => t - inicios[i]);
+  assert.equal(inicios.length, 4);
+  assert.ok(intervalos.every((v) => v >= 40));
 });
 
 test('429 global pausa todos os destinos', async () => {
