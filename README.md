@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src=".github/assets/readme/banner.png" alt="Global, o chat global entre Fluxer e Discord" width="900">
+<a href="https://globalbot.site"><img src=".github/assets/readme/banner.png" alt="Global" width="760"></a>
 
 <br>
 
 [![Site](https://img.shields.io/badge/site-globalbot.site-0330ef?style=flat-square&labelColor=0B0B0B)](https://globalbot.site)
-[![Fluxer](https://img.shields.io/badge/Fluxer-adicionar%20ao%20servidor-eb0075?style=flat-square&labelColor=0B0B0B)](https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=4503600164629568)
+[![Fluxer](https://img.shields.io/badge/Fluxer-adicionar-0330ef?style=flat-square&labelColor=0B0B0B)](https://web.fluxer.app/oauth2/authorize?client_id=1562253521942745089&scope=bot&permissions=4503600164629568)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-0330ef?style=flat-square&labelColor=0B0B0B&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-0330ef?style=flat-square&labelColor=0B0B0B&logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-PolyForm%20Noncommercial-0330ef?style=flat-square&labelColor=0B0B0B)](LICENSE)
@@ -13,7 +13,7 @@
 </div>
 
 > [!NOTE]
-> Este repositório é o **bot** do Global. O código do site fica em [globaloficial/global_site](https://github.com/globaloficial/global_site). As mensagens nas imagens são fictícias, só para mostrar o fluxo.
+> Este repositório é o **bot**. O código do site fica em [globaloficial/global_site](https://github.com/globaloficial/global_site).
 
 <br>
 
@@ -21,95 +21,94 @@
 
 <p align="center">
 O Global liga comunidades do <a href="https://fluxer.app">Fluxer</a> e do Discord em um único chat.<br>
-Cada servidor escolhe um canal, e o que é escrito ali aparece nos canais de todos os outros,<br>
+Cada servidor escolhe um canal, e as mensagens dele aparecem nos canais de todos os outros,<br>
 com edições, exclusões e replies sincronizados.
 </p>
 
+<br>
+
+<h2 align="center">Como funciona</h2>
+
 <div align="center">
-<img src=".github/assets/readme/recursos.png" alt="Recursos do Global" width="800">
+<img src=".github/assets/readme/fluxo.png" alt="Fluxo de uma mensagem pelo Global" width="720">
 </div>
 
 <br>
 
-<h2 align="center">Como uma mensagem viaja</h2>
-
 <div align="center">
-<img src=".github/assets/readme/fluxo.png" alt="Fluxo de uma mensagem pelo Global" width="800">
-</div>
-
-<br>
 
 | Etapa | O que acontece |
 | :---: | --- |
-| **1** | Alguém escreve no canal global do servidor, no Fluxer ou no Discord |
-| **2** | A mensagem passa pelos filtros: links, convites, spam, palavras e mídia NSFW |
-| **3** | O vínculo da mensagem é guardado no MongoDB, para sincronizar edições e exclusões |
+| **1** | Alguém escreve no canal global do servidor |
+| **2** | A mensagem passa pelos filtros: links, convites, spam, palavras e NSFW |
+| **3** | O vínculo é guardado no MongoDB, para sincronizar edições e exclusões |
 | **4** | Emojis e menções são convertidos para a plataforma de destino |
-| **5** | Cada plataforma tem a sua fila, com limite de requisições, para não estourar o rate limit |
-| **6** | O bot envia por webhook, com o nome e o avatar de quem escreveu e o servidor de origem no rodapé |
+| **5** | Cada plataforma tem a sua fila, com limite de requisições |
+| **6** | O bot envia por webhook, com o nome e o avatar de quem escreveu |
 
-> [!IMPORTANT]
-> Toda a entrega é feita por webhook. O Global precisa da permissão **Gerenciar Webhooks** no canal conectado. Sem ela, a mensagem não chega e o bot avisa no canal, no máximo uma vez a cada 6 horas.
+</div>
+
+<p align="center">O Global precisa da permissão <b>Gerenciar Webhooks</b> no canal conectado. Sem ela, a mensagem não chega e o bot avisa no canal.</p>
 
 <br>
 
-<h2 align="center">Um processo, duas plataformas</h2>
-
-<div align="center">
-<img src=".github/assets/readme/plataformas.png" alt="Arquitetura do Global" width="800">
-</div>
+<h2 align="center">Fluxer e Discord</h2>
 
 <p align="center">
-O bot do Fluxer e o bot do Discord rodam no mesmo processo e conversam com o núcleo por adaptadores.<br>
-Por isso o resto do código, como filtros, sincronização e pontes, não precisa saber de que plataforma a mensagem veio.
+Os dois bots rodam no mesmo processo e falam com o núcleo por adaptadores.<br>
+Cada plataforma tem a sua própria fila de envio, então o limite de uma não trava a outra.
 </p>
 
 <br>
 
 <h2 align="center">Pontes privadas</h2>
 
-<div align="center">
-<img src=".github/assets/readme/pontes.png" alt="Pontes privadas do Global" width="800">
-</div>
-
 <p align="center">
 Quem não quer usar o chat global pode ligar canais de servidores amigos, entre Fluxer e Discord.<br>
 As mensagens ficam só dentro da ponte.
 </p>
 
+<div align="center">
+
 | Comando | O que faz |
 | --- | --- |
-| `g.ponte criar [nome]` | Cria a ponte com o canal atual e gera um código, como `AB3D-9XK2` |
-| `g.ponte entrar <código>` | Liga o canal atual a uma ponte existente |
+| `g.ponte criar [nome]` | Cria a ponte com o canal atual e gera um código |
+| `g.ponte entrar <código>` | Liga o canal atual a uma ponte |
 | `g.ponte listar` | Mostra as pontes do servidor |
 | `g.ponte sair` | Tira o canal atual da ponte |
-| `g.ponte remover <código> <id do servidor>` | O dono tira outro servidor da ponte |
+| `g.ponte remover <código> <id>` | O dono tira outro servidor da ponte |
 | `g.ponte encerrar <código>` | O dono apaga a ponte |
 
-Cada ponte aceita até 10 servidores, com um canal por servidor, e um canal não pode estar no chat global e em uma ponte ao mesmo tempo.
+</div>
+
+<p align="center">Até 10 servidores por ponte. Um canal não pode estar no chat global e em uma ponte ao mesmo tempo.</p>
 
 <br>
 
 <h2 align="center">Comandos</h2>
 
-No Discord os comandos também existem como slash (`/conectar`, `/config`, `/ponte` e outros). Para usar, é preciso ter a permissão **Gerenciar Canais**.
+<p align="center">No Discord os comandos também existem como slash. É preciso ter a permissão <b>Gerenciar Canais</b>.</p>
+
+<div align="center">
 
 | Comando | O que faz |
 | --- | --- |
 | `g.conectar` · `g.desconectar` | Define ou remove o canal do chat global |
 | `g.pausar` · `g.retomar` | Pausa e retoma a conexão |
 | `g.config` | Mostra o estado da conexão, do webhook e dos filtros |
-| `g.automod` | Ajusta os filtros automáticos do servidor |
+| `g.automod` | Ajusta os filtros automáticos |
 | `g.ponte` | Cria e gerencia pontes privadas |
 | `g.perfil` · `g.destacar` | Perfil do usuário e destaque de mensagens |
 | `g.report` | Envia uma mensagem para a moderação |
 | `g.botinfo` · `g.ping` · `g.ajuda` | Informações, latência e lista de comandos |
 
+</div>
+
 <br>
 
 <h2 align="center">Instalação</h2>
 
-Requer Node.js 20+ ou Bun, um MongoDB em execução e o token de um bot do Fluxer. O token de um bot do Discord é opcional.
+<p align="center">Requer Node.js 20+ ou Bun, um MongoDB em execução e o token de um bot do Fluxer.</p>
 
 ```sh
 git clone https://github.com/globaloficial/global
@@ -118,7 +117,7 @@ bun install
 cp .env.example .env
 ```
 
-<h3 align="center">Variáveis de ambiente</h3>
+<div align="center">
 
 | Variável | Obrigatória | Padrão |
 | --- | :---: | --- |
@@ -132,13 +131,16 @@ cp .env.example .env
 | `DISCORD_CONCORRENCIA` | Não | `10` |
 | `DISCORD_REQS_POR_SEGUNDO` | Não | `30` |
 
+</div>
+
 > [!IMPORTANT]
 > Sem o serviço NSFW no ar, mídia é bloqueada por padrão. Ajuste `NSFW_URL` ou mantenha o serviço rodando.
 
-> [!TIP]
-> Para o Discord, ative a **Message Content Intent** no [Developer Portal](https://discord.com/developers/applications). O bot também precisa de **Gerenciar Webhooks** e **Gerenciar Mensagens** nos canais conectados.
+Para o Discord, ative a **Message Content Intent** no [Developer Portal](https://discord.com/developers/applications). O bot também precisa de **Gerenciar Webhooks** e **Gerenciar Mensagens** nos canais conectados.
 
-<h3 align="center">Execução</h3>
+<br>
+
+<h2 align="center">Execução</h2>
 
 ```sh
 bun index.js
@@ -182,11 +184,25 @@ global/
 
 <br>
 
+<h2 align="center">Cores</h2>
+
+<div align="center">
+
+| Uso | Cor |
+| --- | --- |
+| Oficial | ![#0330ef](https://img.shields.io/badge/-%230330ef-0330ef?style=flat-square) |
+| Fundo | ![#0B0B0B](https://img.shields.io/badge/-%230B0B0B-0B0B0B?style=flat-square) |
+| Cartões | ![#0F0F0F](https://img.shields.io/badge/-%230F0F0F-0F0F0F?style=flat-square) |
+
+</div>
+
+<br>
+
 <h2 align="center">Privacidade e licença</h2>
 
 <p align="center">
 A política de privacidade está em <a href="PRIVACIDADE.md">PRIVACIDADE.md</a>.<br>
-O código é distribuído sob a <a href="LICENSE">PolyForm Noncommercial 1.0.0</a>.
+Distribuído sob a <a href="LICENSE">PolyForm Noncommercial 1.0.0</a>.
 </p>
 
 <br>
