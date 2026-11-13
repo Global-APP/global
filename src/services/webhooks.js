@@ -33,11 +33,11 @@ async function removerWebhookAntigo(destino) {
 
 async function criarWebhook(destino) {
   const canal = await client.channels.fetch(String(destino.canalId));
-  if (!canal || typeof canal.createWebhook !== 'function') {
+  if (!canal || typeof canal['createWebhook'] !== 'function') {
     throw new Error(`Canal ${destino.canalId} não aceita webhook`);
   }
 
-  const nova = await canal.createWebhook({ name: NOME_WEBHOOK });
+  const nova = await canal['createWebhook']({ name: NOME_WEBHOOK });
   if (!nova.token) throw new Error('A API não devolveu o token do webhook');
 
   await Guild.updateOne(
