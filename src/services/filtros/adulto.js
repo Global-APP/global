@@ -3,7 +3,7 @@ function canalAdulto(canal) {
 }
 
 function servidorAdulto(guild) {
-  return !!guild && guild.nsfw === true;
+  return !!guild && (guild.nsfw === true || guild.nsfwLevel === 3);
 }
 
 function origemAdulta(message) {

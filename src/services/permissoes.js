@@ -5,6 +5,7 @@ const Bloqueio = require('../models/Bloqueio');
 const { log } = require('../util/logger');
 
 async function membroPodeGerenciarCanais(message) {
+  if (typeof message.podeGerenciarCanais === 'function') return message.podeGerenciarCanais();
   try {
     const guild = await message.resolveGuild();
     if (!guild) return false;

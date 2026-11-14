@@ -1,11 +1,12 @@
-const { client } = require('../../lib/client');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild } = require('../filtros/moderacao');
 const { log, errMsg } = require('../../util/logger');
 const { ehStaffOuDono } = require('../permissoes');
 const { carregarCredenciais } = require('../webhooks');
-const { infoMensagem, montarEmbedGlobal, montarCorpoEdicaoWebhook } = require('./mensagem');
-const { editarMensagem, editarMensagemWebhook, apagarCopia, erroPermanente } = require('../entrega/transporte');
+const { converterConteudo } = require('../../util/conversao');
+const { obterPlataforma, plataformaDaMensagem, apagarCopia } = require('../../plataformas');
+const { infoMensagem } = require('./mensagem');
+const { erroPermanente } = require('../entrega/transporte');
 
 async function ehMensagemOriginal(id) {
   const r = await MensagemGlobal.findOne({ msgId: String(id) }).lean();
@@ -15,7 +16,7 @@ async function ehMensagemOriginal(id) {
 async function apagarCopiasDoGrupo(grupoId) {
   const gId = String(grupoId);
   const copias = await MensagemGlobal.find({ grupoId: gId, msgId: { $ne: gId } }).lean();
-  const credenciais = await carregarCredenciais(copias.filter((c) => c.webhookId).map((c) => c.guildId));
+  const credenciais = await carregarCredenciais(copias.filter((c) => c.webhookId));
   const resultados = await Promise.allSettled(copias.map((c) => apagarCopia(c, credenciais)));
 
   const resolvidas = [];
@@ -49,14 +50,19 @@ async function sincronizarEdicao(antiga, nova) {
   if (!(await ehMensagemOriginal(id))) return;
   if (antiga && antiga.content != null && antiga.content === nova.content) return;
 
-  const canalOrigem = await client.channels.fetch(String(nova.channelId));
-  const completa = await canalOrigem.messages.fetch(id);
+  const origem = plataformaDaMensagem(nova);
+  const adaptadorOrigem = obterPlataforma(origem);
+  if (!adaptadorOrigem) return;
+
+  const completa = await adaptadorOrigem.buscarMensagem(String(nova.channelId), id);
   if (!completa.author || completa.author.bot) return;
 
   const info = await infoMensagem(completa);
   const analise = analisarConteudo(completa.content);
+  const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
+  const ehPonte = copias.some((c) => c.ponteId);
 
-  if (!(await ehStaffOuDono(completa.author.id))) {
+  if (!ehPonte && !(await ehStaffOuDono(completa.author.id))) {
     const motivo = motivoFiltroGuild(analise, await configDaGuild(info.guildId));
     if (motivo) {
       await apagarCopiasDoGrupo(id);
@@ -66,21 +72,27 @@ async function sincronizarEdicao(antiga, nova) {
     }
   }
 
-  const embed = montarEmbedGlobal(completa, info);
-  const copias = await MensagemGlobal.find({ grupoId: id, msgId: { $ne: id } }).lean();
-  const credenciais = await carregarCredenciais(copias.filter((c) => c.webhookId).map((c) => c.guildId));
+  const credenciais = await carregarCredenciais(copias.filter((c) => c.webhookId));
 
-  const corpoEmbed = { embeds: [embed.toJSON()] };
-  const corpoWebhook = montarCorpoEdicaoWebhook(completa, info);
+  const edicoes = new Map();
+  const edicaoPara = (plataforma) => {
+    if (!edicoes.has(plataforma)) {
+      edicoes.set(plataforma, obterPlataforma(plataforma).montarEdicao(completa, info, {
+        conteudo: converterConteudo(completa.content, origem, plataforma),
+        rotulo: origem === plataforma ? null : info.rotuloOrigem
+      }));
+    }
+    return edicoes.get(plataforma);
+  };
 
   const resultados = await Promise.allSettled(copias.map(async (c) => {
-    if (motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
+    if (!c.ponteId && motivoFiltroGuild(analise, await configDaGuild(c.guildId))) {
       await apagarCopia(c, credenciais);
       return 'removida';
     }
-    if (c.webhookId) return editarMensagemWebhook(c, credenciais, corpoWebhook);
-    await editarMensagem(c.canalId, c.msgId, corpoEmbed);
-    return 'editada';
+    const adaptador = obterPlataforma(c.plataforma);
+    if (!adaptador) return 'sem-plataforma';
+    return adaptador.editarCopia(c, edicaoPara(adaptador.nome), credenciais);
   }));
 
   const contar = (valor) => resultados.filter((x) => x.status === 'fulfilled' && x.value === valor).length;

@@ -4,6 +4,7 @@ const { invalidarDestinos } = require('../lib/cacheDestinos');
 const guildSchema = new Schema(
   {
     guildId: { type: String, required: true, unique: true },
+    plataforma: { type: String, enum: ['fluxer', 'discord', null], default: null },
     canalId: { type: String, default: null },
     pausado: { type: Boolean, default: false },
     filtrarPalavroes: { type: Boolean, default: true },
@@ -13,7 +14,6 @@ const guildSchema = new Schema(
     webhookId: { type: String, default: null },
     webhookToken: { type: String, default: null, select: false },
     webhookCanalId: { type: String, default: null },
-    modoEnvio: { type: String, enum: ['webhook', 'embed', null], default: null },
     configPainelMessageId: { type: String, default: null },
     configPainelUserId: { type: String, default: null }
   },
