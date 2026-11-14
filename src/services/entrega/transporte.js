@@ -30,7 +30,7 @@ async function executarWebhook(destino, payload) {
     if (!webhookInvalido(e)) throw e;
   }
 
-  await esquecerWebhook(destino);
+  await esquecerWebhook(destino.guildId);
   const novo = await obterWebhook({ ...destino, webhookId: null, webhookToken: null, webhookCanalId: null });
   if (!novo) return null;
 

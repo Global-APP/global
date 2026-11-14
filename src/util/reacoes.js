@@ -3,8 +3,7 @@ const { logRateLimit } = require('./ratelimit');
 const { bloqueioAtivo } = require('../services/entrega/fila');
 
 async function reagir(message, candidatos) {
-  const bloqueado = typeof message.bloqueioAtivo === 'function' ? message.bloqueioAtivo() : bloqueioAtivo();
-  if (bloqueado) return false;
+  if (bloqueioAtivo()) return false;
   for (const emoji of candidatos) {
     try {
       await message.react(emoji);

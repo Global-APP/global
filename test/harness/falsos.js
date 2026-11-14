@@ -268,160 +268,13 @@ const clienteEstavel = {
     delete: (...a) => apiAtual.cliente.rest.delete(...a)
   }
 };
-
-let apiDiscordAtual = null;
-
-function criarApiDiscord() {
-  const api = {
-    mensagens: new Map(),
-    webhooks: new Map(),
-    webhooksCriados: 0,
-    proximoId: 1,
-    rejeitarUsername: false,
-    posts: []
-  };
-
-  function chave(canalId, msgId) { return `${canalId}:${msgId}`; }
-  function naoEncontrada() { const e = new Error('Unknown Message'); e.status = 404; return e; }
-
-  function webhookDiscord(id, token, canalId) {
-    return {
-      id: String(id),
-      token,
-      async send(opcoes) {
-        if (api.rejeitarUsername && opcoes.username !== 'Global') {
-          const e = new Error('Invalid Form Body username: cannot contain discord');
-          e.code = 50035;
-          throw e;
-        }
-        const msgId = `dw${api.proximoId++}`;
-        api.mensagens.set(chave(canalId, msgId), { canalId: String(canalId), id: msgId, opcoes, webhookId: String(id) });
-        return { id: msgId };
-      },
-      async editMessage(msgId, corpo) {
-        const m = api.mensagens.get(chave(canalId, msgId));
-        if (!m) throw naoEncontrada();
-        m.opcoes = { ...m.opcoes, ...corpo };
-        m.editadaVezes = (m.editadaVezes || 0) + 1;
-      },
-      async deleteMessage(msgId) {
-        if (!api.mensagens.delete(chave(canalId, msgId))) throw naoEncontrada();
-      },
-      async delete() { api.webhooks.delete(String(id)); }
-    };
-  }
-
-  api.cliente = {
-    user: { id: 'discord-bot', username: 'Global' },
-    guilds: { cache: new Map() },
-    users: { fetch: async (id) => ({ id, username: `discord-${id}` }) },
-    channels: {
-      async fetch(canalId) {
-        return {
-          id: canalId,
-          async createWebhook() {
-            if (api.criacaoWebhookFalha) {
-              const e = new Error('Missing Permissions');
-              e.code = 50013;
-              e.status = 403;
-              throw e;
-            }
-            const id = `dwh${++api.webhooksCriados}`;
-            const token = `dtok-${id}`;
-            api.webhooks.set(id, { token, canalId: String(canalId) });
-            return webhookDiscord(id, token, canalId);
-          },
-          messages: { fetch: async (msgId) => api.mensagens.get(chave(canalId, msgId)) }
-        };
-      }
-    },
-    rest: {
-      async post(rota, { body }) {
-        const canalId = rota.split('/')[2];
-        const id = `dm${api.proximoId++}`;
-        api.posts.push({ canalId, body });
-        api.mensagens.set(chave(canalId, id), { canalId, id, body });
-        return { id };
-      },
-      async patch(rota, { body }) {
-        const [, , canalId, , msgId] = rota.split('/');
-        const m = api.mensagens.get(chave(canalId, msgId));
-        if (!m) throw naoEncontrada();
-        m.body = { ...m.body, ...body };
-        m.editadaVezes = (m.editadaVezes || 0) + 1;
-      },
-      async delete(rota) {
-        const [, , canalId, , msgId] = rota.split('/');
-        if (!api.mensagens.delete(chave(canalId, msgId))) throw naoEncontrada();
-      }
-    }
-  };
-
-  api.webhookDiscord = webhookDiscord;
-  api.copiasVivas = () => [...api.mensagens.values()];
-  return api;
-}
-
-class ConstrutorFalso {
-  constructor() { this.dados = {}; }
-  setCustomId(v) { this.dados.customId = v; return this; }
-  setLabel(v) { this.dados.label = v; return this; }
-  setStyle(v) { this.dados.style = v; return this; }
-  addComponents(...c) { this.dados.components = c; return this; }
-  toJSON() { return { ...this.dados }; }
-}
-
-const discordJsFalso = {
-  Client: class {},
-  Events: {},
-  GatewayIntentBits: {},
-  Partials: {},
-  ActivityType: {},
-  ApplicationCommandOptionType: { String: 3 },
-  ButtonStyle: { Success: 3, Secondary: 2 },
-  ButtonBuilder: ConstrutorFalso,
-  ActionRowBuilder: ConstrutorFalso,
-  PermissionFlagsBits: { ManageChannels: 16n },
-  PermissionsBitField: class { constructor() { this.bitfield = 0n; } },
-  Routes: coreFalso.Routes,
-  WebhookClient: class {
-    constructor({ id, token }) {
-      const atual = () => apiDiscordAtual.webhookDiscord(id, token, apiDiscordAtual.webhooks.get(String(id))?.canalId);
-      this.id = String(id);
-      this.token = token;
-      this.send = (...a) => atual().send(...a);
-      this.editMessage = (...a) => atual().editMessage(...a);
-      this.deleteMessage = (...a) => atual().deleteMessage(...a);
-      this.delete = (...a) => atual().delete(...a);
-    }
-  }
-};
-
-const discordClientEstavel = {
-  user: { id: 'discord-bot', username: 'Global' },
-  guilds: { cache: { get: (id) => ({ id, name: `Discord ${id}` }) } },
-  users: { fetch: (...a) => apiDiscordAtual.cliente.users.fetch(...a) },
-  channels: { fetch: (...a) => apiDiscordAtual.cliente.channels.fetch(...a) },
-  rest: {
-    post: (...a) => apiDiscordAtual.cliente.rest.post(...a),
-    patch: (...a) => apiDiscordAtual.cliente.rest.patch(...a),
-    delete: (...a) => apiDiscordAtual.cliente.rest.delete(...a)
-  },
-  on() {},
-  once() {}
-};
-
-function instalarApiDiscord(api) { apiDiscordAtual = api; }
-
 const carregarOriginal = Module._load;
 Module._load = function (request, parent, ...resto) {
   if (request === 'mongoose') return mongooseFalso;
   if (request === '@fluxerjs/core') return coreFalso;
-  if (request === 'discord.js') return discordJsFalso;
   let resolvido = null;
   try { resolvido = Module._resolveFilename(request, parent); } catch (_) { /* módulo de runtime */ }
   if (resolvido === path.join(SRC, 'lib', 'client.js')) return { client: clienteEstavel };
-  if (resolvido === path.join(SRC, 'lib', 'discordClient.js')) return { discordClient: discordClientEstavel };
   return carregarOriginal.call(this, request, parent, ...resto);
 };
 
@@ -463,4 +316,4 @@ function mensagemDe({ guildIdx, autor, conteudo, respondendo = null, anexos = { 
   };
 }
 
-module.exports = { criarApi, criarApiDiscord, instalarApiDiscord, instalarApi, popularDestinos, mensagemDe, dados, consultas, guild, EmbedBuilder };
+module.exports = { criarApi, instalarApi, popularDestinos, mensagemDe, dados, consultas, guild, EmbedBuilder };

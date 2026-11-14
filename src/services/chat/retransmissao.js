@@ -1,10 +1,9 @@
-const { COOLDOWN_TEMPO } = require('../../config');
+const { client } = require('../../lib/client');
+const { COOLDOWN_TEMPO, MODO_ENVIO } = require('../../config');
 const { emojis } = require('../../util/emojis');
 const MensagemGlobal = require('../../models/MensagemGlobal');
 const { contarMensagemParaAnuncio } = require('../anuncio');
 const { tratarFalhaDestino, registrarSucessoDestino, listarDestinosAtivos } = require('../destinos');
-const { destinosDaPonte } = require('../pontes');
-const Bloqueio = require('../../models/Bloqueio');
 const { checarMidia } = require('../filtros/nsfw');
 const { origemAdulta } = require('../filtros/adulto');
 const { analisarConteudo, configDaGuild, motivoFiltroGuild, bloquearPorFiltro } = require('../filtros/moderacao');
@@ -12,22 +11,25 @@ const { verificarSpam } = require('../filtros/spam');
 const { log, errMsg, descreverContexto } = require('../../util/logger');
 const { ehStaffOuDono, estaBloqueado } = require('../permissoes');
 const { reagir } = require('../../util/reacoes');
-const { converterConteudo } = require('../../util/conversao');
-const { obterPlataforma, plataformaDaMensagem, apagarCopia } = require('../../plataformas');
+const { ehRateLimit, marcarEnvio } = require('../../util/ratelimit');
+const { enfileirar } = require('../entrega/fila');
+const { apagarCopia, enviarPorWebhook } = require('../entrega/transporte');
 const { carregarCredenciais } = require('../webhooks');
-const { ErroSemWebhook } = require('../entrega/semWebhook');
-const { avisarSemWebhook } = require('../avisoWebhook');
-const { infoMensagem } = require('./mensagem');
+const { infoMensagem, montarEmbedGlobal, montarPayloadWebhook } = require('./mensagem');
 const { prepararAnexos } = require('./anexos');
 
 const cooldownUsuarios = new Map();
 
-async function destinosDaPonteAtivos(ponte, guildIdOrigem) {
-  const bloqueados = new Set(await Bloqueio.find({ tipo: 'servidor' }).distinct('id'));
-  return destinosDaPonte(ponte, guildIdOrigem).filter((d) => !bloqueados.has(d.guildId));
-}
-
 const retransmissoesEmAndamento = new Map();
+
+function payloadWebhookDoDestino(base, mencao, origemReply) {
+  if (!mencao) return base;
+  return {
+    ...base,
+    content: `${mencao}\n${base.content}`,
+    allowedMentions: { parse: [], users: [origemReply.autorId], repliedUser: false }
+  };
+}
 
 function cancelarRetransmissao(grupoId) {
   const estado = retransmissoesEmAndamento.get(String(grupoId));
@@ -36,12 +38,11 @@ function cancelarRetransmissao(grupoId) {
   return true;
 }
 
-async function retransmitirMensagemGlobal(message, ponte = null) {
+async function retransmitirMensagemGlobal(message) {
   const autor = message.author;
   const agora = Date.now();
-  const origem = plataformaDaMensagem(message);
   const info = await infoMensagem(message);
-  const { guildId: guildIdOrigem, urlMidia } = info;
+  const { guildId: guildIdOrigem, nomeServidor, authorText, urlMidia } = info;
 
   const bloqueado = (await estaBloqueado('usuario', autor.id)) || (await estaBloqueado('servidor', guildIdOrigem));
   if (bloqueado) {
@@ -59,19 +60,11 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
   const analise = analisarConteudo(message.content);
   const staff = await ehStaffOuDono(autor.id);
 
-  if (!staff && !ponte) {
+  if (!staff) {
     const cfgOrigem = await configDaGuild(guildIdOrigem);
     const motivoFiltro = motivoFiltroGuild(analise, cfgOrigem) || verificarSpam(autor.id, message.content);
     if (motivoFiltro) {
       await bloquearPorFiltro(message, motivoFiltro);
-      return;
-    }
-  }
-
-  if (!staff && ponte) {
-    const motivoSpam = verificarSpam(autor.id, message.content);
-    if (motivoSpam) {
-      await bloquearPorFiltro(message, motivoSpam);
       return;
     }
   }
@@ -102,24 +95,20 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
 
   const inicio = Date.now();
 
-  let anexosPromise = null;
-  const obterAnexos = () => {
-    if (!anexosPromise) anexosPromise = prepararAnexos(message);
-    return anexosPromise;
-  };
+  let embed = null;
+  try {
+    embed = montarEmbedGlobal(message, info);
+  } catch (e) {
+    log.warn('GLOBAL', `Falha ao montar embed, usando texto simples: ${errMsg(e)}`);
+    embed = null;
+  }
 
-  const preparos = new Map();
-  const preparoDe = (plataforma) => {
-    if (!preparos.has(plataforma)) {
-      preparos.set(plataforma, obterPlataforma(plataforma).criarPreparo({
-        message,
-        info,
-        obterAnexos,
-        conteudo: converterConteudo(message.content, origem, plataforma),
-        rotulo: origem === plataforma ? null : info.rotuloOrigem
-      }));
+  let payloadWebhookPronto = null;
+  const payloadWebhook = () => {
+    if (!payloadWebhookPronto) {
+      payloadWebhookPronto = prepararAnexos(message).then((anexos) => montarPayloadWebhook(message, info, anexos));
     }
-    return preparos.get(plataforma);
+    return payloadWebhookPronto;
   };
 
   const refId = message.messageReference ? message.messageReference.messageId : null;
@@ -139,12 +128,10 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
   }
 
   // Servidor com filtro ativo não recebe o que violar.
-  const candidatos = (ponte ? await destinosDaPonteAtivos(ponte, guildIdOrigem) : await listarDestinosAtivos())
-    .filter((c) => c.guildId !== guildIdOrigem && obterPlataforma(c.plataforma));
-  const destinos = ponte ? candidatos : candidatos.filter((c) => !motivoFiltroGuild(analise, c));
+  const candidatos = (await listarDestinosAtivos()).filter((c) => c.guildId !== guildIdOrigem);
+  const destinos = candidatos.filter((c) => !motivoFiltroGuild(analise, c));
   const filtrados = candidatos.length - destinos.length;
 
-  const ponteId = ponte ? ponte.codigo : null;
   const grupoId = String(message.id);
   const estado = { cancelado: false };
   retransmissoesEmAndamento.set(grupoId, estado);
@@ -152,27 +139,61 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
   let resultados;
   try {
     resultados = await Promise.allSettled(destinos.map((destino) => {
-      const adaptador = obterPlataforma(destino.plataforma);
-
       const mencao = (origemReply
         && destino.guildId === origemReply.guildId
         && origemReply.autorId !== String(autor.id))
         ? `<@${origemReply.autorId}>`
         : null;
 
+      const extraMencao = mencao
+        ? { allowedMentions: { users: [origemReply.autorId], repliedUser: false } }
+        : {};
+
+      const payload = embed
+        ? { embeds: [embed], ...(mencao ? { content: mencao } : {}) }
+        : { content: `${mencao ? mencao + '\n' : ''}👤 **${authorText}**\n${message.content || ''}\n${urlMidia || ''}\n\n_Enviado desde: ${nomeServidor}_` };
+
       const alvoReply = grupoRespondido ? (copiasDoRespondido.get(destino.guildId) || null) : null;
 
-      return adaptador.enfileirar(destino.canalId, async () => {
+      return enfileirar(destino.canalId, async () => {
         if (estado.cancelado) return null;
 
-        return adaptador.entregar(destino, {
-          message,
-          info,
-          preparo: preparoDe(adaptador.nome),
-          mencao,
-          origemReply,
-          alvoReply
-        });
+        if ((destino.modoEnvio || MODO_ENVIO) === 'webhook') {
+          const base = await payloadWebhook();
+          const enviadaWebhook = await enviarPorWebhook(destino, payloadWebhookDoDestino(base, mencao, origemReply), alvoReply);
+          if (enviadaWebhook) {
+            if (!enviadaWebhook.mensagem || !enviadaWebhook.mensagem.id) throw new Error('Webhook não retornou a mensagem criada');
+            return {
+              guildId: destino.guildId,
+              canalId: destino.canalId,
+              msgId: enviadaWebhook.mensagem.id,
+              comReply: enviadaWebhook.comReply,
+              webhookId: enviadaWebhook.webhookId
+            };
+          }
+        }
+
+        marcarEnvio(destino.canalId);
+
+        let enviada;
+        let comReply = false;
+        if (alvoReply) {
+          try {
+            enviada = await client.channels.send(destino.canalId, {
+              ...payload,
+              ...extraMencao,
+              replyTo: { channelId: alvoReply.canalId, messageId: alvoReply.msgId, guildId: destino.guildId },
+              ping: false
+            });
+            comReply = true;
+          } catch (e) {
+            if (ehRateLimit(e)) throw e;
+            log.warn('GLOBAL', `Reply falhou no servidor ${destino.guildId}, enviando sem reply: ${errMsg(e)}`);
+          }
+        }
+        if (!enviada) enviada = await client.channels.send(destino.canalId, { ...payload, ...extraMencao });
+
+        return { guildId: destino.guildId, canalId: destino.canalId, msgId: enviada.id, comReply };
       });
     }));
   } finally {
@@ -183,7 +204,7 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
   const linhas = [];
 
   if (message.id && message.channel) {
-    linhas.push({ grupoId, guildId: guildIdOrigem, plataforma: origem, canalId: String(message.channel.id), msgId: String(message.id), autorId: String(autor.id), ponteId, criadoEm });
+    linhas.push({ grupoId, guildId: guildIdOrigem, canalId: String(message.channel.id), msgId: String(message.id), autorId: String(autor.id), criadoEm });
   }
 
   let ok = 0;
@@ -196,33 +217,19 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
       cancelados++;
     } else if (r.status === 'fulfilled' && r.value.msgId) {
       ok++;
-      if (!ponte) registrarSucessoDestino(r.value.guildId);
+      registrarSucessoDestino(r.value.guildId);
       if (r.value.comReply) replies++;
-      linhas.push({
-        grupoId,
-        guildId: r.value.guildId,
-        plataforma: destinos[i].plataforma || 'fluxer',
-        canalId: r.value.canalId,
-        msgId: String(r.value.msgId),
-        autorId: String(autor.id),
-        webhookId: r.value.webhookId || null,
-        ponteId,
-        criadoEm
-      });
+      linhas.push({ grupoId, guildId: r.value.guildId, canalId: r.value.canalId, msgId: String(r.value.msgId), autorId: String(autor.id), webhookId: r.value.webhookId || null, criadoEm });
     } else {
       const motivo = r.status === 'rejected' ? errMsg(r.reason) : 'sem id de mensagem';
       falhas.push(`${destinos[i].guildId}: ${motivo}`);
-      if (r.status === 'rejected' && r.reason instanceof ErroSemWebhook) {
-        tratamentos.push(avisarSemWebhook(obterPlataforma(destinos[i].plataforma), destinos[i]));
-      } else if (r.status === 'rejected' && !ponte) {
-        tratamentos.push(tratarFalhaDestino(destinos[i].guildId, r.reason));
-      }
+      if (r.status === 'rejected') tratamentos.push(tratarFalhaDestino(destinos[i].guildId, r.reason));
     }
   });
 
   if (estado.cancelado) {
     const jaEnviadas = linhas.filter((l) => l.msgId !== grupoId);
-    const credenciais = await carregarCredenciais(jaEnviadas);
+    const credenciais = await carregarCredenciais(jaEnviadas.map((l) => l.guildId));
     await Promise.allSettled(jaEnviadas.map((l) => apagarCopia(l, credenciais)));
     await Promise.allSettled(tratamentos);
     log.info('GLOBAL', `msg ${message.id} apagada durante a retransmissão | ${cancelados} envio(s) cancelado(s), ${jaEnviadas.length} cópia(s) já enviada(s) removida(s)`);
@@ -246,7 +253,7 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
 
   const ms = Date.now() - inicio;
   log.info(
-    ponte ? 'PONTE' : 'GLOBAL',
+    'GLOBAL',
     `msg ${message.id} | ${descreverContexto(message)} | ` +
     `${ok}/${destinos.length} servidor(es) em ${ms}ms` +
     (filtrados > 0 ? ` (${filtrados} com filtro ativo não receberam)` : '') +
@@ -257,7 +264,7 @@ async function retransmitirMensagemGlobal(message, ponte = null) {
     log.warn('GLOBAL', `${falhas.length} falha(s) na retransmissão da msg ${message.id}`, falhas.join('\n'));
   }
 
-  if (!ponte) await contarMensagemParaAnuncio();
+  await contarMensagemParaAnuncio();
 }
 
 module.exports = { retransmitirMensagemGlobal, cancelarRetransmissao };
