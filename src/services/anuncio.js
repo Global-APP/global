@@ -3,7 +3,7 @@ const { COR_PADRAO_ANUNCIO } = require('../config');
 const Anuncio = require('../models/Anuncio');
 const { tratarFalhaDestino, registrarSucessoDestino, listarDestinosAtivos } = require('./destinos');
 const { log } = require('../util/logger');
-const { obterPlataforma } = require('../plataformas');
+const { enviarMensagem } = require('./entrega/transporte');
 
 const CHAVE = 'global';
 
@@ -70,10 +70,10 @@ function montarEmbedAnuncio(a) {
 
 async function enviarAnuncioParaTodos(anuncio) {
   const embed = montarEmbedAnuncio(anuncio);
-  const destinos = (await listarDestinosAtivos()).filter((d) => obterPlataforma(d.plataforma));
+  const destinos = await listarDestinosAtivos();
 
   const resultados = await Promise.allSettled(
-    destinos.map((destino) => obterPlataforma(destino.plataforma).enviarAnuncio(destino.canalId, anuncio, embed))
+    destinos.map(({ canalId }) => enviarMensagem(canalId, { embeds: [embed] }))
   );
 
   let enviados = 0;

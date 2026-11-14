@@ -26,7 +26,7 @@ O bot lê os comandos (prefixo `g.`) e as mensagens do canal conectado. Ele não
 
 ## Arquivos, imagens e figurinhas
 
-Como as mensagens são entregues por webhook, o bot baixa os anexos temporariamente na memória (até 4 arquivos de 8 MB) e os reenvia. Nada é gravado em disco nem no banco de dados. O que não couber nesse limite é enviado como link.
+Quando o servidor de destino usa o modo webhook, o bot baixa os anexos temporariamente na memória (até 4 arquivos de 8 MB) e os reenvia. Nada é gravado em disco nem no banco de dados. O que não couber nesse limite é enviado como link.
 
 ## Verificação de conteúdo impróprio (NSFW)
 
@@ -44,7 +44,7 @@ O chat global é compartilhado entre comunidades que podem ter menores de idade.
 
 ## Com quem compartilhamos
 
-- Com os outros servidores conectados, no Fluxer ou no Discord: apenas as mensagens do chat global, com nome, avatar e nome/ícone do servidor de origem, como o próprio chat já exige.
+- Com os outros servidores conectados: apenas as mensagens do chat global, com nome, avatar e nome/ícone do servidor de origem, como o próprio chat já exige.
 - Com o serviço de verificação NSFW descrito acima.
 - Não vendemos dados e não os usamos para publicidade.
 - O banco de dados do bot fica em um servidor controlado pelo operador.
