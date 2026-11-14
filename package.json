@@ -12,7 +12,7 @@
   "dependencies": {
     "@fluxerjs/core": "latest",
     "@napi-rs/canvas": "^1.0.13",
-    "mongoose": "^9.11.4"
+    "mongoose": "^9.12.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
